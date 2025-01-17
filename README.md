@@ -18,9 +18,8 @@
 
 ## Features
 
-- Supports image generation using the [AI SDK by Vercel](https://sdk.vercel.ai/docs), allowing multiple AI providers to be used interchangeably with just a few lines of code.
-- Easily toggle between different model presets for “performance” or “quality” generation.
-- A single form prompt for generating images across multiple providers simultaneously.
+- Supports image generation using [`generateImage`](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-image) from the [AI SDK by Vercel](https://sdk.vercel.ai/docs), allowing multiple AI providers to be used interchangeably with just a few lines of code.
+- A single input to generate images across multiple providers simultaneously.
 - [shadcn/ui](https://ui.shadcn.com/) components for a modern, responsive UI powered by [Tailwind CSS](https://tailwindcss.com).
 - Built with the latest [Next.js](https://nextjs.org) App Router (version 15).
 
