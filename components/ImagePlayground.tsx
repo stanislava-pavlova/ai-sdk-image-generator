@@ -60,10 +60,10 @@ export function ImagePlayground({
   };
 
   const providerToModel = {
-    replicate: selectedModels.replicate,
+    // replicate: selectedModels.replicate,
     vertex: selectedModels.vertex,
-    openai: selectedModels.openai,
-    fireworks: selectedModels.fireworks,
+    // openai: selectedModels.openai,
+    // fireworks: selectedModels.fireworks,
   };
 
   const handlePromptSubmit = (newPrompt: string) => {
@@ -85,7 +85,6 @@ export function ImagePlayground({
           onToggleProviders={toggleView}
           mode={mode}
           onModeChange={handleModeChange}
-          suggestions={suggestions}
         />
         <>
           {(() => {
