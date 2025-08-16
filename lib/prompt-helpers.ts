@@ -1,45 +1,28 @@
 import { CharacterData, ContextData, PromptTemplate } from './prompt-types';
 
 export function generatePrompt(character: CharacterData | null, context: ContextData | null, segmentText: string): string {
-  const template = `Cinematic shot of {name}, a {age}-year-old {ethnicity} {occupation}, dressed in {clothing}, {accessories}, {pose}.Set in {environment}, in {location}, during the {season}, at {time_of_day}.The weather is {weather}, and the lighting is {lighting}. Mood is {mood}, emotion is {emotion}, perspective is {perspective}, and the color palette is {color_palette}.Eyes: {eyes}, hair: {hair}. Photo focus is {focus}. Scene segment: {segment_text}`;
+  const name = character?.name || 'unknown';
+  const age = character?.age?.toString() || 'unknown';
+  const ethnicity = character?.ethnicity || '';
+  const occupation = character?.occupation || '';
+  const clothing = character?.clothing || 'unknown';
+  const accessories = character?.accessories || 'with no accessories';
+  const pose = character?.pose || 'standing';
+  const eyes = character?.eyes || 'normal';
+  const hair = character?.hair || 'normal';
+  const environment = context?.environment || 'unknown';
+  const location = context?.location || 'unknown';
+  const season = context?.season || 'unknown';
+  const time_of_day = context?.time_of_day || 'unknown';
+  const weather = context?.weather || 'sunny';
+  const lighting = context?.lighting || 'natural sunlight';
+  const mood = context?.mood || 'unknown';
+  const perspective = context?.perspective || 'unknown';
+  const color_palette = context?.color_palette || ' warm, earthy color palette';
+  const focus = context?.focus || 'with a sharp focus on the subject';
+  const segment = segmentText.trim() || 'no scene description';
 
-  let finalPrompt = template;
-
-  // Replace character variables
-  if (character) {
-    finalPrompt = finalPrompt.replace(/{name}/g, character.name || 'unknown');
-    finalPrompt = finalPrompt.replace(/{age}/g, character.age?.toString() || 'unknown');
-    finalPrompt = finalPrompt.replace(/{ethnicity}/g, character.ethnicity || 'unknown');
-    finalPrompt = finalPrompt.replace(/{occupation}/g, character.occupation || 'unknown');
-    finalPrompt = finalPrompt.replace(/{clothing}/g, character.clothing || 'unknown');
-    finalPrompt = finalPrompt.replace(/{accessories}/g, character.accessories || 'none');
-    finalPrompt = finalPrompt.replace(/{pose}/g, character.pose || 'standing');
-    finalPrompt = finalPrompt.replace(/{eyes}/g, character.eyes || 'normal');
-    finalPrompt = finalPrompt.replace(/{hair}/g, character.hair || 'normal');
-  }
-
-  // Replace context variables
-  if (context) {
-    finalPrompt = finalPrompt.replace(/{environment}/g, context.environment || 'unknown');
-    finalPrompt = finalPrompt.replace(/{location}/g, context.location || 'unknown');
-    finalPrompt = finalPrompt.replace(/{season}/g, context.season || 'unknown');
-    finalPrompt = finalPrompt.replace(/{time_of_day}/g, context.time_of_day || 'unknown');
-    finalPrompt = finalPrompt.replace(/{weather}/g, context.weather || 'unknown');
-    finalPrompt = finalPrompt.replace(/{lighting}/g, context.lighting || 'unknown');
-    finalPrompt = finalPrompt.replace(/{mood}/g, context.mood || 'unknown');
-    finalPrompt = finalPrompt.replace(/{emotion}/g, context.emotion || 'unknown');
-    finalPrompt = finalPrompt.replace(/{perspective}/g, context.perspective || 'unknown');
-    finalPrompt = finalPrompt.replace(/{color_palette}/g, context.color_palette || 'unknown');
-    finalPrompt = finalPrompt.replace(/{focus}/g, context.focus || 'unknown');
-  }
-
-  // Replace scene segment
-  finalPrompt = finalPrompt.replace(/{segment_text}/g, segmentText.trim() || 'no scene description');
-
-  // Clean up any remaining template variables
-  finalPrompt = finalPrompt.replace(/\{[^}]+\}/g, 'unknown');
-
-  return finalPrompt;
+  return `Cinematic shot of ${name}, a ${age}-year-old ${ethnicity} ${occupation}, dressed in ${clothing}, ${accessories}, ${pose}. Set in ${environment}, in ${location}, during the ${season}, at ${time_of_day}. The weather is ${weather}, and the lighting is ${lighting}. Mood is ${mood}, perspective is ${perspective}, and the color palette is ${color_palette}. Eyes: ${eyes}, hair: ${hair}. Photo focus is ${focus}. Scene segment: ${segment}`;
 }
 
 export function parseTextToCharacter(text: string): CharacterData | null {
@@ -119,10 +102,6 @@ export function parseTextToContext(text: string): ContextData | null {
       // Extract time of day
       else if (lowerLine.includes('time:')) {
         contextData.time_of_day = line.split(':')[1]?.trim() || 'day';
-      }
-      // Extract emotion
-      else if (lowerLine.includes('emotion:')) {
-        contextData.emotion = line.split(':')[1]?.trim() || 'neutral';
       }
       // Extract location
       else if (lowerLine.includes('location:')) {

@@ -1,7 +1,6 @@
 Mood: mysterious, tense
 Environment: old library
 Time: night
-Emotion: fear, determination
 Location: Victorian city
 Season: autumn
 Weather: foggy

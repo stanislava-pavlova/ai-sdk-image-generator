@@ -32,7 +32,6 @@ export interface ContextData {
   mood?: string;
   environment?: string;
   time_of_day?: string;
-  emotion?: string;
   location?: string;
   season?: string;
   weather?: string;

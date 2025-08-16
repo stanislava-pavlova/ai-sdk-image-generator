@@ -18,7 +18,7 @@ import { generatePrompt } from "@/lib/prompt-helpers";
 const TIMEOUT_MILLIS = 55 * 1000;
 
 const DEFAULT_IMAGE_SIZE = "1024x1024";
-const DEFAULT_ASPECT_RATIO = "1:1";
+const DEFAULT_ASPECT_RATIO = "9:16";
 
 interface ProviderConfig {
   createImageModel: (modelId: string) => ImageModel;
