@@ -1,4 +1,4 @@
-import { CharacterData, ContextData, PromptTemplate } from './prompt-types';
+import { CharacterData, ContextData } from './prompt-types';
 
 export function generatePrompt(character: CharacterData | null, context: ContextData | null, segmentText: string): string {
   const name = character?.name || 'unknown';
@@ -20,9 +20,10 @@ export function generatePrompt(character: CharacterData | null, context: Context
   const perspective = context?.perspective || 'unknown';
   const color_palette = context?.color_palette || ' warm, earthy color palette';
   const focus = context?.focus || 'with a sharp focus on the subject';
+  const lens_type = context?.lens_type || 'unknown';
   const segment = segmentText.trim() || 'no scene description';
 
-  return `Cinematic shot of ${name}, a ${age}-year-old ${ethnicity} ${occupation}, dressed in ${clothing}, ${accessories}, ${pose}. Set in ${environment}, in ${location}, during the ${season}, at ${time_of_day}. The weather is ${weather}, and the lighting is ${lighting}. Mood is ${mood}, perspective is ${perspective}, and the color palette is ${color_palette}. Eyes: ${eyes}, hair: ${hair}. Photo focus is ${focus}. Scene segment: ${segment}`;
+  return `Cinematic shot of ${name}, a ${age}-year-old ${ethnicity} ${occupation}, dressed in ${clothing}, ${accessories}, ${pose}. Set in ${environment}, in ${location}, during the ${season}, at ${time_of_day}. The weather is ${weather}, and the lighting is ${lighting}. Mood is ${mood}, perspective is ${perspective}, and the color palette is ${color_palette}. Eyes: ${eyes}, hair: ${hair}. Photo focus is ${focus}. Lens type: ${lens_type}. Scene segment: ${segment}`;
 }
 
 export function parseTextToCharacter(text: string): CharacterData | null {
@@ -120,8 +121,12 @@ export function parseTextToContext(text: string): ContextData | null {
         contextData.lighting = line.split(':')[1]?.trim() || 'natural';
       }
       // Extract perspective
-      else if (lowerLine.includes('perspective:')) {
+      else if (lowerLine.includes('camera_perspective:')) {
         contextData.perspective = line.split(':')[1]?.trim() || 'medium shot';
+      }
+      // Extract lens type
+      else if (lowerLine.includes('lens_type:')) {
+        contextData.lens_type = line.split(':')[1]?.trim() || 'unknown';
       }
       // Extract color palette
       else if (lowerLine.includes('color:')) {
