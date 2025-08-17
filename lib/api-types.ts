@@ -6,6 +6,13 @@ export interface GenerateImageRequest {
   modelId: string;
 }
 
+export interface GenerateSegmentedImagesRequest {
+  segments: string[];
+  provider: ProviderKey;
+  modelId: string;
+  storyConfigData?: any;
+}
+
 export interface GenerateImageResponse {
   image?: string;
   error?: string;
