@@ -21,6 +21,7 @@ const BULGARIAN_ABBREVIATIONS = new Set([
   "т.н.",
   "т.е.",
   "напр.",
+  "пр.",
   "др.",
   "проф.",
   "ул.",
@@ -55,8 +56,30 @@ const BULGARIAN_ABBREVIATIONS = new Set([
   "сек.",
 ]);
 
+const isLowercaseLetter = (ch: string): boolean => /[a-zа-я]/.test(ch);
+
+// Build a list of abbreviation endings that actually end with a dot
+const dotAbbreviations = Array.from(BULGARIAN_ABBREVIATIONS)
+  .filter((abbr) => abbr.endsWith("."))
+  .sort((a, b) => b.length - a.length) // match longer first (e.g., "т.е." before "г.")
+  .map((abbr) => abbr.toLowerCase());
+
+const isClosingWrapper = (ch: string): boolean => {
+  return (
+    ch === '"' ||
+    ch === "'" ||
+    ch === "“" ||
+    ch === "”" ||
+    ch === "„" ||
+    ch === ")" ||
+    ch === "]" ||
+    ch === "»" ||
+    ch === "›"
+  );
+};
+
 /**
- * Parses Bulgarian text into sentences, handling abbreviations correctly
+ * Parses Bulgarian text into sentences, handling abbreviations and context around dots
  */
 export function parseTextIntoSentences(text: string): string[] {
   if (!text || text.trim().length === 0) {
@@ -66,67 +89,71 @@ export function parseTextIntoSentences(text: string): string[] {
   // Normalize whitespace and remove excessive spacing
   const normalizedText = text.replace(/\s+/g, " ").trim();
 
-  // Split on sentence delimiters while preserving the delimiters
-  const preliminarySentences = normalizedText.split(/([.!?…]+)/);
-
   const sentences: string[] = [];
   let currentSentence = "";
 
-  for (let i = 0; i < preliminarySentences.length; i++) {
-    const part = preliminarySentences[i];
+  for (let i = 0; i < normalizedText.length; i++) {
+    const ch = normalizedText[i];
+    currentSentence += ch;
 
-    if (part.match(/^[.!?…]+$/)) {
-      // This is a delimiter
-      currentSentence += part;
+    const isTerminator = ch === "." || ch === "!" || ch === "?" || ch === "…";
+    if (!isTerminator) {
+      continue;
+    }
 
-      // Check if the previous text ends with a Bulgarian abbreviation
-      const textBeforePunctuation = currentSentence
-        .substring(0, currentSentence.length - part.length)
-        .trim();
-      const isAbbreviation = isEndingWithBulgarianAbbreviation(
-        textBeforePunctuation
+    let shouldEnd = false;
+
+    if (ch === "!" || ch === "?" || ch === "…") {
+      shouldEnd = true;
+    } else if (ch === ".") {
+      const currentLower = currentSentence.toLowerCase();
+
+      // Check if we end with a known abbreviation (including the dot we just appended)
+      const endsWithKnownAbbreviation = dotAbbreviations.some((abbr) =>
+        currentLower.endsWith(abbr)
       );
 
-      // If it's not an abbreviation or it's an ellipsis/multiple punctuation, end the sentence
-      if (
-        !isAbbreviation ||
-        part.length > 1 ||
-        part.includes("!") ||
-        part.includes("?") ||
-        part.includes("…")
-      ) {
-        if (currentSentence.trim().length > 0) {
-          sentences.push(currentSentence.trim());
-          currentSentence = "";
+      if (endsWithKnownAbbreviation) {
+        shouldEnd = false;
+      } else {
+        // Look ahead to the next significant character
+        let j = i + 1;
+        while (
+          j < normalizedText.length &&
+          (normalizedText[j] === " " || isClosingWrapper(normalizedText[j]))
+        ) {
+          j++;
+        }
+
+        const nextCh = j < normalizedText.length ? normalizedText[j] : "";
+
+        // Heuristics:
+        // - If next is a lowercase letter (e.g., continuation like "пр. залез"), don't end
+        // - If next is a digit (e.g., decimals like 3.14), don't end
+        // - Otherwise, end the sentence (e.g., space + uppercase or end-of-text)
+        if (nextCh && (isLowercaseLetter(nextCh) || /[0-9]/.test(nextCh))) {
+          shouldEnd = false;
+        } else {
+          shouldEnd = true;
         }
       }
-    } else {
-      // This is text content
-      currentSentence += part;
+    }
+
+    if (shouldEnd) {
+      const trimmed = currentSentence.trim();
+      if (trimmed.length > 0) {
+        sentences.push(trimmed);
+      }
+      currentSentence = "";
     }
   }
 
-  // Add any remaining content as the last sentence
-  if (currentSentence.trim().length > 0) {
-    sentences.push(currentSentence.trim());
+  const tail = currentSentence.trim();
+  if (tail.length > 0) {
+    sentences.push(tail);
   }
 
   return sentences.filter((s) => s.length > 0);
-}
-
-/**
- * Checks if text ends with a Bulgarian abbreviation
- */
-function isEndingWithBulgarianAbbreviation(text: string): boolean {
-  const trimmed = text.trim().toLowerCase();
-
-  for (const abbr of BULGARIAN_ABBREVIATIONS) {
-    if (trimmed.endsWith(abbr.toLowerCase())) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 /**
@@ -192,20 +219,12 @@ function calculateWordOverlap(sentence: string, windowWords: string[]): number {
 function createSegmentFromWindow(
   windowWords: string[],
   sentences: string[],
-  allWords: string[]
+  sentenceWordRanges: { index: number; start: number; end: number }[],
+  windowStart: number,
+  windowEnd: number
 ): string {
   if (windowWords.length === 0) {
     return "";
-  }
-
-  // Find the position of the window in the original text
-  const windowStart = allWords.findIndex(
-    (word) => word.toLowerCase() === windowWords[0].toLowerCase()
-  );
-
-  if (windowStart === -1) {
-    // Fallback: just join the window words
-    return windowWords.join(" ") + ".";
   }
 
   // Find sentences that intersect with this window
@@ -215,18 +234,16 @@ function createSegmentFromWindow(
     index: number;
     intersectionWords: number;
   }[] = [];
-  let wordPosition = 0;
 
   for (let i = 0; i < sentences.length; i++) {
     const sentence = sentences[i];
-    const sentenceWords = tokenizeText(sentence);
-    const sentenceStart = wordPosition;
-    const sentenceEnd = wordPosition + sentenceWords.length;
-    const windowEnd = windowStart + windowWords.length;
+    const range = sentenceWordRanges[i];
+    const sentenceStart = range.start;
+    const sentenceEnd = range.end + 1; // end is inclusive in range, +1 for half-open interval
 
     // Check if sentence intersects with window
     const intersectionStart = Math.max(sentenceStart, windowStart);
-    const intersectionEnd = Math.min(sentenceEnd, windowEnd);
+    const intersectionEnd = Math.min(sentenceEnd, windowEnd + 1);
     const intersectionWords = Math.max(0, intersectionEnd - intersectionStart);
 
     if (intersectionWords > 0) {
@@ -238,8 +255,6 @@ function createSegmentFromWindow(
         intersectionWords,
       });
     }
-
-    wordPosition += sentenceWords.length;
   }
 
   if (relevantSentences.length === 0) {
@@ -257,24 +272,25 @@ function createSegmentFromWindow(
   }
 
   // Strategy 2: Combine sentences that together cover the window well
-  const selectedSentences: string[] = [];
+  const selected: { index: number; sentence: string; intersectionWords: number }[] = [];
   let coveredWords = 0;
 
-  for (const { sentence, intersectionWords } of relevantSentences) {
-    selectedSentences.push(sentence);
+  for (const { index, sentence, intersectionWords } of relevantSentences) {
+    selected.push({ index, sentence, intersectionWords });
     coveredWords += intersectionWords;
 
     // Stop if we have good coverage or too many sentences
-    if (
-      coveredWords >= windowWords.length * 0.8 ||
-      selectedSentences.length >= 3
-    ) {
+    if (coveredWords >= windowWords.length * 0.8 || selected.length >= 3) {
       break;
     }
   }
 
-  if (selectedSentences.length > 0) {
-    return selectedSentences.join(" ");
+  if (selected.length > 0) {
+    // Preserve original order
+    return selected
+      .sort((a, b) => a.index - b.index)
+      .map((s) => s.sentence)
+      .join(" ");
   }
 
   // Fallback: use the sentence with the most intersection
@@ -313,12 +329,27 @@ export function segmentBulgarianText(
   // Create meaningful segments for each window
   const selections: WindowSelection[] = [];
 
+  // Pre-compute sentence word ranges (start/end indices in the tokenized allWords array)
+  const sentenceWordRanges: { index: number; start: number; end: number }[] = [];
+  let cursor = 0;
+  for (let i = 0; i < sentences.length; i++) {
+    const count = tokenizeText(sentences[i]).length;
+    const start = cursor;
+    const end = Math.max(start + count - 1, start);
+    sentenceWordRanges.push({ index: i, start, end });
+    cursor += count;
+  }
+
   for (let i = 0; i < windows.length; i++) {
     const windowWords = windows[i];
+    const windowStart = i * step;
+    const windowEnd = windowStart + windowWords.length - 1;
     const segmentText = createSegmentFromWindow(
       windowWords,
       sentences,
-      allWords
+      sentenceWordRanges,
+      windowStart,
+      windowEnd
     );
 
     if (segmentText) {
