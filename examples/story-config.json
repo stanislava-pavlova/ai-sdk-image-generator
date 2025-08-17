@@ -1,0 +1,22 @@
+{
+  "identity_core": {
+    "name": "Marie Curie",
+    "origin": "Polish-born, worked in France",
+    "domains": "physics and chemistry",
+    "values": "precision, perseverance, humility",
+    "hair_general": "hair tied up in a bun",
+    "demeanor": "focused and determined"
+  },
+  "style_throughline": {
+    "art_style": "cinematic realism",
+    "mood": "quiet determination",
+    "color_palette_base": "cool neutral blues and greys"
+  },
+  "camera_baseline": {
+    "perspective": "close-up",
+    "lens_mm": 50,
+    "composition": "golden ratio",
+    "depth_of_field": "shallow"
+  },
+  "global_constraints": "keep_name_consistent, preserve_scientific_identity"
+}
