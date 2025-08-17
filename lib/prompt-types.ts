@@ -13,36 +13,25 @@ export interface TextSegmentData {
   totalSegments: number;
 }
 
-export interface CharacterData {
-  name?: string;
-  age?: number;
-  ethnicity?: string;
-  occupation?: string;
-  style?: string;
-  clothing?: string;
-  accessories?: string;
-  pose?: string;
-  facial_expression?: string;
-  eyes?: string;
-  hair?: string;
-  [key: string]: any;
-}
-
-export interface ContextData {
-  mood?: string;
-  environment?: string;
-  time_of_day?: string;
-  location?: string;
-  season?: string;
-  weather?: string;
-  lighting?: string;
-  perspective?: string;
-  color_palette?: string;
-  [key: string]: any;
-}
-
-export interface PromptTemplate {
-  character: CharacterData | null;
-  context: ContextData | null;
-  segmentText: string;
+export interface StoryConfigData {
+  identity_core: {
+    name: string;
+    origin?: string;
+    domains?: string;
+    values?: string;
+    hair_general?: string;
+    demeanor?: string;
+  };
+  style_throughline: {
+    art_style?: string;
+    mood?: string;
+    color_palette_base?: string;
+  };
+  camera_baseline: {
+    perspective?: string;
+    lens_mm?: number;
+    composition?: string;
+    depth_of_field?: string;
+  };
+  global_constraints?: string;
 }

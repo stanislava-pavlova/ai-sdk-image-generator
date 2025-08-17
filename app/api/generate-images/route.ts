@@ -5,11 +5,9 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 // import { replicate } from "@ai-sdk/replicate";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
-import {
-  GenerateImageRequest,
-  GenerateSegmentedImagesRequest,
-} from "@/lib/api-types";
+import { GenerateSegmentedImagesRequest } from "@/lib/api-types";
 import { generatePrompt } from "@/lib/prompt-helpers";
+import { StoryConfigData } from "@/lib/prompt-types";
 
 /**
  * Intended to be slightly less than the maximum execution time allowed by the
@@ -68,42 +66,40 @@ export async function POST(req: NextRequest) {
 
   console.log("Received request body:", JSON.stringify(body));
 
-  // Normalize request to always use segments format
-  let segments: string[];
-  let provider: ProviderKey;
-  let modelId: string;
-  let characterData: any = null;
-  let contextData: any = null;
-  let forceSegmentedResponse = false;
-
-  if ("segments" in body) {
-    // Segmented request
-    ({ segments, provider, modelId, characterData, contextData } = body);
-    forceSegmentedResponse = true; // Always return segmented format for editing
-  } else {
-    // Single prompt request - convert to segments format
-    const { prompt, provider: p, modelId: m } = body as GenerateImageRequest;
-    segments = [prompt];
-    provider = p;
-    modelId = m;
-  }
-
-  return handleImageGeneration({
+  const {
     segments,
     provider,
     modelId,
-    characterData,
-    contextData,
-  }, forceSegmentedResponse);
+    storyConfigData = null,
+  } = body as GenerateSegmentedImagesRequest & { storyConfigData?: StoryConfigData };
+
+  const forceSegmentedResponse = true; // Always return segmented format
+
+  return handleImageGeneration(
+    {
+      segments,
+      provider,
+      modelId,
+      storyConfigData,
+    },
+    forceSegmentedResponse
+  );
 }
 
-async function handleImageGeneration({
-  segments,
-  provider,
-  modelId,
-  characterData,
-  contextData,
-}: GenerateSegmentedImagesRequest, forceSegmentedResponse: boolean = false) {
+async function handleImageGeneration(
+  {
+    segments,
+    provider,
+    modelId,
+    storyConfigData,
+  }: {
+    segments: string[];
+    provider: ProviderKey;
+    modelId: string;
+    storyConfigData: StoryConfigData | null;
+  },
+  forceSegmentedResponse: boolean = false
+) {
   if (
     !Array.isArray(segments) ||
     segments?.length === 0 ||
@@ -126,9 +122,9 @@ async function handleImageGeneration({
     const startTime = performance.now();
 
     try {
-      // Generate prompt for this segment using character and context data
-      const prompt = generatePrompt(characterData, contextData, segment);
-
+      const prompt = generatePrompt(storyConfigData, segment);
+      console.log(`Generated prompt: ${i}`, prompt);
+      // return;
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
@@ -144,9 +140,7 @@ async function handleImageGeneration({
         }
 
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
-        console.log(
-          `Completed image ${i + 1}/${segments.length} [elapsed=${elapsed}s]`
-        );
+        console.log(`Completed image ${i + 1}/${segments.length} [elapsed=${elapsed}s]`);
 
         return {
           segmentIndex: i,
@@ -167,15 +161,13 @@ async function handleImageGeneration({
       results.push({
         segmentIndex: i,
         error: "Failed to generate image for this segment",
-        prompt: generatePrompt(characterData, contextData, segment),
+        prompt: generatePrompt(storyConfigData, segment),
       });
     }
   }
 
   const successCount = results.filter((r) => r.image).length;
-  console.log(
-    `Completed image generation [success=${successCount}/${segments.length}]`
-  );
+  console.log(`Completed image generation [success=${successCount}/${segments.length}]`);
 
   // For single image requests, return the original format for backward compatibility
   // UNLESS forceSegmentedResponse is true (for editing functionality)

@@ -10,8 +10,7 @@ export interface GenerateSegmentedImagesRequest {
   segments: string[];
   provider: ProviderKey;
   modelId: string;
-  characterData?: any;
-  contextData?: any;
+  storyConfigData?: any;
 }
 
 export interface GenerateImageResponse {

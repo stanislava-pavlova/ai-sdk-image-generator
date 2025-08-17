@@ -11,11 +11,8 @@ export function ImagePlayground() {
   const [segmentedImages, setSegmentedImages] = useState<any>(null);
   const [isGeneratingSegments, setIsGeneratingSegments] = useState(false);
   const [originalSegments, setOriginalSegments] = useState<string[]>([]);
-  const [characterData, setCharacterData] = useState<any>(null);
-  const [contextData, setContextData] = useState<any>(null);
-  const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(
-    new Set()
-  );
+  const [storyConfigData, setStoryConfigData] = useState<any>(null);
+  const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(new Set());
 
   // Effect to detect when all images are done generating
   useEffect(() => {
@@ -25,9 +22,9 @@ export function ImagePlayground() {
   }, [generatingIndices.size, isGeneratingSegments]);
 
   const [showProviders, setShowProviders] = useState(true);
-  const [selectedModels, setSelectedModels] = useState<
-    Record<ProviderKey, string>
-  >(MODEL_CONFIGS.performance);
+  const [selectedModels, setSelectedModels] = useState<Record<ProviderKey, string>>(
+    MODEL_CONFIGS.performance
+  );
   const [mode, setMode] = useState<ModelMode>("performance");
   const toggleView = () => {
     setShowProviders((prev) => !prev);
@@ -43,12 +40,10 @@ export function ImagePlayground() {
     segment: string,
     segmentIndex: number,
     totalSegments: number,
-    characterDataOverride?: any,
-    contextDataOverride?: any
+    storyConfigOverride?: any
   ): Promise<void> => {
     // Use override data if provided, otherwise fall back to state
-    const charData = characterDataOverride || characterData;
-    const ctxData = contextDataOverride || contextData;
+    const configData = storyConfigOverride !== undefined ? storyConfigOverride : storyConfigData;
 
     try {
       const response = await fetch("/api/generate-images", {
@@ -60,8 +55,7 @@ export function ImagePlayground() {
           segments: [segment],
           provider: "vertex",
           modelId: selectedModels.vertex,
-          characterData: charData,
-          contextData: ctxData,
+          storyConfigData: configData,
         }),
       });
 
@@ -143,14 +137,11 @@ export function ImagePlayground() {
     setGeneratingIndices(new Set());
 
     try {
-      const segments = data.segmentData.segments.map(
-        (s: any) => s.selectedSentence
-      );
+      const segments = data.segmentData.segments.map((s: any) => s.selectedSentence);
 
       // Store original data for editing
       setOriginalSegments(segments);
-      setCharacterData(data.characterData);
-      setContextData(data.contextData);
+      setStoryConfigData(data.storyConfigData);
 
       // Initialize with loading states for all images
       const initialResults = segments.map((segment: string, index: number) => ({
@@ -173,13 +164,7 @@ export function ImagePlayground() {
       // Generate images progressively (one by one to show them as they complete)
       for (let i = 0; i < segments.length; i++) {
         // Don't await - start all generations in parallel but update UI immediately
-        generateSingleImage(
-          segments[i],
-          i,
-          segments.length,
-          data.characterData,
-          data.contextData
-        );
+        generateSingleImage(segments[i], i, segments.length, data.storyConfigData);
       }
     } catch (error) {
       console.error("Error starting segmented generation:", error);
@@ -207,8 +192,7 @@ export function ImagePlayground() {
         newPrompt,
         segmentIndex,
         segmentedImages.totalSegments,
-        characterData,
-        contextData
+        null // Use null to force raw prompt for editing
       );
 
       // Update the original segments array
@@ -244,8 +228,7 @@ export function ImagePlayground() {
             <div className="space-y-3">
               <div className="text-lg font-medium">Generating Images...</div>
               <div className="text-sm text-zinc-600">
-                Processing text segments and generating images with
-                character/context data
+                Processing text segments and generating images
               </div>
               <div className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin mx-auto"></div>
             </div>
