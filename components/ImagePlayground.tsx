@@ -1,31 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ModelSelect } from "@/components/ModelSelect";
 import { PromptInput } from "@/components/PromptInput";
 import { SegmentedImageDisplay } from "@/components/SegmentedImageDisplay";
-import { ModelCardCarousel } from "@/components/ModelCardCarousel";
-import {
-  MODEL_CONFIGS,
-  PROVIDERS,
-  ProviderKey,
-  ModelMode,
-  initializeProviderRecord,
-} from "@/lib/provider-config";
-import { useImageGeneration } from "@/hooks/use-image-generation";
+import { MODEL_CONFIGS, ProviderKey, ModelMode } from "@/lib/provider-config";
 import { Header } from "./Header";
 import { Card } from "@/components/ui/card";
 
 export function ImagePlayground() {
-  const { images, timings, failedProviders, isLoading, activePrompt } =
-    useImageGeneration();
-
   const [segmentedImages, setSegmentedImages] = useState<any>(null);
   const [isGeneratingSegments, setIsGeneratingSegments] = useState(false);
   const [originalSegments, setOriginalSegments] = useState<string[]>([]);
   const [characterData, setCharacterData] = useState<any>(null);
   const [contextData, setContextData] = useState<any>(null);
-  const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(new Set());
+  const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(
+    new Set()
+  );
 
   // Effect to detect when all images are done generating
   useEffect(() => {
@@ -38,9 +28,6 @@ export function ImagePlayground() {
   const [selectedModels, setSelectedModels] = useState<
     Record<ProviderKey, string>
   >(MODEL_CONFIGS.performance);
-  const [enabledProviders, setEnabledProviders] = useState(
-    initializeProviderRecord(true)
-  );
   const [mode, setMode] = useState<ModelMode>("performance");
   const toggleView = () => {
     setShowProviders((prev) => !prev);
@@ -52,26 +39,8 @@ export function ImagePlayground() {
     setShowProviders(true);
   };
 
-  const handleModelChange = (providerKey: ProviderKey, model: string) => {
-    setSelectedModels((prev) => ({ ...prev, [providerKey]: model }));
-  };
-
-  const handleProviderToggle = (provider: string, enabled: boolean) => {
-    setEnabledProviders((prev) => ({
-      ...prev,
-      [provider]: enabled,
-    }));
-  };
-
-  const providerToModel = {
-    // replicate: selectedModels.replicate,
-    vertex: selectedModels.vertex,
-    // openai: selectedModels.openai,
-    // fireworks: selectedModels.fireworks,
-  };
-
   const generateSingleImage = async (
-    segment: string, 
+    segment: string,
     segmentIndex: number,
     totalSegments: number,
     characterDataOverride?: any,
@@ -80,7 +49,7 @@ export function ImagePlayground() {
     // Use override data if provided, otherwise fall back to state
     const charData = characterDataOverride || characterData;
     const ctxData = contextDataOverride || contextData;
-    
+
     try {
       const response = await fetch("/api/generate-images", {
         method: "POST",
@@ -101,7 +70,7 @@ export function ImagePlayground() {
       }
 
       const result = await response.json();
-      
+
       // Update the specific image immediately
       if (result.results && result.results[0]) {
         const newImageResult = {
@@ -113,12 +82,14 @@ export function ImagePlayground() {
           if (!prev) {
             // Initialize with empty results array
             return {
-              results: Array(totalSegments).fill(null).map((_, i) => ({
-                segmentIndex: i,
-                image: null,
-                error: null,
-                prompt: originalSegments[i] || "",
-              })),
+              results: Array(totalSegments)
+                .fill(null)
+                .map((_, i) => ({
+                  segmentIndex: i,
+                  image: null,
+                  error: null,
+                  prompt: originalSegments[i] || "",
+                })),
               totalSegments,
               successCount: 0,
               provider: "vertex",
@@ -128,21 +99,21 @@ export function ImagePlayground() {
           // Update specific image
           const updatedResults = [...prev.results];
           updatedResults[segmentIndex] = newImageResult;
-          
+
           return {
             ...prev,
             results: updatedResults,
-            successCount: updatedResults.filter(r => r.image).length,
+            successCount: updatedResults.filter((r) => r.image).length,
           };
         });
       }
     } catch (error) {
       console.error(`Error generating image ${segmentIndex + 1}:`, error);
-      
+
       // Update with error state
       setSegmentedImages((prev: any) => {
         if (!prev) return prev;
-        
+
         const updatedResults = [...prev.results];
         updatedResults[segmentIndex] = {
           segmentIndex: segmentIndex,
@@ -150,7 +121,7 @@ export function ImagePlayground() {
           error: "Failed to generate image",
           prompt: originalSegments[segmentIndex] || "",
         };
-        
+
         return {
           ...prev,
           results: updatedResults,
@@ -158,7 +129,7 @@ export function ImagePlayground() {
       });
     } finally {
       // Remove from generating indices
-      setGeneratingIndices(prev => {
+      setGeneratingIndices((prev) => {
         const newSet = new Set(prev);
         newSet.delete(segmentIndex);
         return newSet;
@@ -167,8 +138,6 @@ export function ImagePlayground() {
   };
 
   const handleSegmentedSubmit = async (data: any) => {
-    console.log("Frontend received data:", data);
-    
     setIsGeneratingSegments(true);
     setSegmentedImages(null);
     setGeneratingIndices(new Set());
@@ -204,16 +173,21 @@ export function ImagePlayground() {
       // Generate images progressively (one by one to show them as they complete)
       for (let i = 0; i < segments.length; i++) {
         // Don't await - start all generations in parallel but update UI immediately
-        generateSingleImage(segments[i], i, segments.length, data.characterData, data.contextData);
+        generateSingleImage(
+          segments[i],
+          i,
+          segments.length,
+          data.characterData,
+          data.contextData
+        );
       }
-
     } catch (error) {
       console.error("Error starting segmented generation:", error);
       setIsGeneratingSegments(false);
       setGeneratingIndices(new Set());
     }
 
-    // We don't set isGeneratingSegments to false here because 
+    // We don't set isGeneratingSegments to false here because
     // individual images are still generating
   };
 
@@ -221,7 +195,7 @@ export function ImagePlayground() {
     if (!segmentedImages) return;
 
     // Add to generating indices for UI feedback
-    setGeneratingIndices(prev => new Set(prev).add(segmentIndex));
+    setGeneratingIndices((prev) => new Set(prev).add(segmentIndex));
 
     try {
       // Create a new segments array with the edited prompt
@@ -229,14 +203,20 @@ export function ImagePlayground() {
       updatedSegments[segmentIndex] = newPrompt;
 
       // Generate only the specific image using the single image function
-      await generateSingleImage(newPrompt, segmentIndex, segmentedImages.totalSegments, characterData, contextData);
+      await generateSingleImage(
+        newPrompt,
+        segmentIndex,
+        segmentedImages.totalSegments,
+        characterData,
+        contextData
+      );
 
       // Update the original segments array
       setOriginalSegments(updatedSegments);
     } catch (error) {
       console.error("Error editing image:", error);
       // Remove from generating indices on error
-      setGeneratingIndices(prev => {
+      setGeneratingIndices((prev) => {
         const newSet = new Set(prev);
         newSet.delete(segmentIndex);
         return newSet;
@@ -250,7 +230,7 @@ export function ImagePlayground() {
       <div className="max-w-7xl mx-auto">
         <Header />
         <PromptInput
-          isLoading={isLoading || isGeneratingSegments}
+          isLoading={isGeneratingSegments}
           onSegmentedSubmit={handleSegmentedSubmit}
           showProviders={showProviders}
           onToggleProviders={toggleView}
@@ -282,58 +262,6 @@ export function ImagePlayground() {
             onEditImage={handleEditImage}
             generatingIndices={generatingIndices}
           />
-        )}
-
-        {/* Regular single image generation results */}
-        {!segmentedImages && !isGeneratingSegments && (
-          <>
-            {(() => {
-              const getModelProps = () =>
-                (Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
-                  const provider = PROVIDERS[key];
-                  const imageItem = images.find((img) => img.provider === key);
-                  const imageData = imageItem?.image;
-                  const modelId = imageItem?.modelId ?? "N/A";
-                  const timing = timings[key];
-
-                  return {
-                    label: provider.displayName,
-                    models: provider.models,
-                    value: selectedModels[key],
-                    providerKey: key,
-                    onChange: (model: string, providerKey: ProviderKey) =>
-                      handleModelChange(providerKey, model),
-                    iconPath: provider.iconPath,
-                    color: provider.color,
-                    enabled: enabledProviders[key],
-                    onToggle: (enabled: boolean) =>
-                      handleProviderToggle(key, enabled),
-                    image: imageData,
-                    modelId,
-                    timing,
-                    failed: failedProviders.includes(key),
-                  };
-                });
-
-              return (
-                <>
-                  <div className="md:hidden">
-                    <ModelCardCarousel models={getModelProps()} />
-                  </div>
-                  <div className="hidden md:grid md:grid-cols-2 2xl:grid-cols-4 gap-8">
-                    {getModelProps().map((props) => (
-                      <ModelSelect key={props.label} {...props} />
-                    ))}
-                  </div>
-                  {activePrompt && activePrompt.length > 0 && (
-                    <div className="text-center mt-4 text-muted-foreground">
-                      {activePrompt}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </>
         )}
       </div>
     </div>
