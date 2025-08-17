@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ModelSelect } from "@/components/ModelSelect";
 import { PromptInput } from "@/components/PromptInput";
 import { SegmentedImageDisplay } from "@/components/SegmentedImageDisplay";
@@ -25,6 +25,14 @@ export function ImagePlayground() {
   const [originalSegments, setOriginalSegments] = useState<string[]>([]);
   const [characterData, setCharacterData] = useState<any>(null);
   const [contextData, setContextData] = useState<any>(null);
+  const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(new Set());
+
+  // Effect to detect when all images are done generating
+  useEffect(() => {
+    if (generatingIndices.size === 0 && isGeneratingSegments) {
+      setIsGeneratingSegments(false);
+    }
+  }, [generatingIndices.size, isGeneratingSegments]);
 
   const [showProviders, setShowProviders] = useState(true);
   const [selectedModels, setSelectedModels] = useState<
@@ -62,10 +70,108 @@ export function ImagePlayground() {
     // fireworks: selectedModels.fireworks,
   };
 
+  const generateSingleImage = async (
+    segment: string, 
+    segmentIndex: number,
+    totalSegments: number,
+    characterDataOverride?: any,
+    contextDataOverride?: any
+  ): Promise<void> => {
+    // Use override data if provided, otherwise fall back to state
+    const charData = characterDataOverride || characterData;
+    const ctxData = contextDataOverride || contextData;
+    
+    try {
+      const response = await fetch("/api/generate-images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          segments: [segment],
+          provider: "vertex",
+          modelId: selectedModels.vertex,
+          characterData: charData,
+          contextData: ctxData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate image ${segmentIndex + 1}`);
+      }
+
+      const result = await response.json();
+      
+      // Update the specific image immediately
+      if (result.results && result.results[0]) {
+        const newImageResult = {
+          ...result.results[0],
+          segmentIndex: segmentIndex,
+        };
+
+        setSegmentedImages((prev: any) => {
+          if (!prev) {
+            // Initialize with empty results array
+            return {
+              results: Array(totalSegments).fill(null).map((_, i) => ({
+                segmentIndex: i,
+                image: null,
+                error: null,
+                prompt: originalSegments[i] || "",
+              })),
+              totalSegments,
+              successCount: 0,
+              provider: "vertex",
+            };
+          }
+
+          // Update specific image
+          const updatedResults = [...prev.results];
+          updatedResults[segmentIndex] = newImageResult;
+          
+          return {
+            ...prev,
+            results: updatedResults,
+            successCount: updatedResults.filter(r => r.image).length,
+          };
+        });
+      }
+    } catch (error) {
+      console.error(`Error generating image ${segmentIndex + 1}:`, error);
+      
+      // Update with error state
+      setSegmentedImages((prev: any) => {
+        if (!prev) return prev;
+        
+        const updatedResults = [...prev.results];
+        updatedResults[segmentIndex] = {
+          segmentIndex: segmentIndex,
+          image: null,
+          error: "Failed to generate image",
+          prompt: originalSegments[segmentIndex] || "",
+        };
+        
+        return {
+          ...prev,
+          results: updatedResults,
+        };
+      });
+    } finally {
+      // Remove from generating indices
+      setGeneratingIndices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(segmentIndex);
+        return newSet;
+      });
+    }
+  };
+
   const handleSegmentedSubmit = async (data: any) => {
     console.log("Frontend received data:", data);
+    
     setIsGeneratingSegments(true);
     setSegmentedImages(null);
+    setGeneratingIndices(new Set());
 
     try {
       const segments = data.segmentData.segments.map(
@@ -77,90 +183,64 @@ export function ImagePlayground() {
       setCharacterData(data.characterData);
       setContextData(data.contextData);
 
-      const requestBody = {
-        segments,
-        provider: "vertex",
-        modelId: selectedModels.vertex,
-        characterData: data.characterData,
-        contextData: data.contextData,
-      };
+      // Initialize with loading states for all images
+      const initialResults = segments.map((segment: string, index: number) => ({
+        segmentIndex: index,
+        image: null,
+        error: null,
+        prompt: segment,
+      }));
 
-      // Use /api/generate-images route with segmented data
-      const response = await fetch("/api/generate-images", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+      setSegmentedImages({
+        results: initialResults,
+        totalSegments: segments.length,
+        successCount: 0,
+        provider: "vertex",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate segmented images");
+      // Set all indices as generating
+      setGeneratingIndices(new Set(segments.map((_: string, i: number) => i)));
+
+      // Generate images progressively (one by one to show them as they complete)
+      for (let i = 0; i < segments.length; i++) {
+        // Don't await - start all generations in parallel but update UI immediately
+        generateSingleImage(segments[i], i, segments.length, data.characterData, data.contextData);
       }
 
-      const result = await response.json();
-      setSegmentedImages(result);
     } catch (error) {
-      console.error("Error generating segmented images:", error);
-      // Handle error - show a toast or error message
-    } finally {
+      console.error("Error starting segmented generation:", error);
       setIsGeneratingSegments(false);
+      setGeneratingIndices(new Set());
     }
+
+    // We don't set isGeneratingSegments to false here because 
+    // individual images are still generating
   };
 
   const handleEditImage = async (segmentIndex: number, newPrompt: string) => {
     if (!segmentedImages) return;
+
+    // Add to generating indices for UI feedback
+    setGeneratingIndices(prev => new Set(prev).add(segmentIndex));
 
     try {
       // Create a new segments array with the edited prompt
       const updatedSegments = [...originalSegments];
       updatedSegments[segmentIndex] = newPrompt;
 
-      // Generate only the specific image
-      const response = await fetch("/api/generate-images", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          segments: [newPrompt], // Only regenerate this one
-          provider: "vertex",
-          modelId: selectedModels.vertex,
-          characterData,
-          contextData,
-        }),
-      });
+      // Generate only the specific image using the single image function
+      await generateSingleImage(newPrompt, segmentIndex, segmentedImages.totalSegments, characterData, contextData);
 
-      if (!response.ok) {
-        throw new Error("Failed to regenerate image");
-      }
-
-      const result = await response.json();
-      console.log("Edit response:", result);
-      
-      // The API now always returns segmented format for editing
-      if (result.results && result.results[0]) {
-        const newImageResult = {
-          ...result.results[0],
-          segmentIndex: segmentIndex,
-          prompt: newPrompt, // Ensure we use the new prompt text
-        };
-
-        // Update the specific image in the results
-        setSegmentedImages((prev: any) => ({
-          ...prev,
-          results: prev.results.map((r: any, i: number) =>
-            i === segmentIndex ? newImageResult : r
-          ),
-        }));
-
-        // Update the original segments array
-        setOriginalSegments(updatedSegments);
-      } else {
-        throw new Error("Invalid response format from API");
-      }
+      // Update the original segments array
+      setOriginalSegments(updatedSegments);
     } catch (error) {
       console.error("Error editing image:", error);
+      // Remove from generating indices on error
+      setGeneratingIndices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(segmentIndex);
+        return newSet;
+      });
       throw error; // Re-throw to be handled by the UI
     }
   };
@@ -193,13 +273,14 @@ export function ImagePlayground() {
         )}
 
         {/* Segmented Images Results */}
-        {segmentedImages && !isGeneratingSegments && (
+        {segmentedImages && (
           <SegmentedImageDisplay
             results={segmentedImages.results}
             totalSegments={segmentedImages.totalSegments}
             successCount={segmentedImages.successCount}
             provider={segmentedImages.provider}
             onEditImage={handleEditImage}
+            generatingIndices={generatingIndices}
           />
         )}
 

@@ -18,6 +18,7 @@ interface SegmentedImageDisplayProps {
   successCount: number;
   provider: string;
   onEditImage?: (segmentIndex: number, newPrompt: string) => void;
+  generatingIndices?: Set<number>;
 }
 
 export function SegmentedImageDisplay({
@@ -26,6 +27,7 @@ export function SegmentedImageDisplay({
   successCount,
   provider,
   onEditImage,
+  generatingIndices = new Set(),
 }: SegmentedImageDisplayProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
@@ -90,10 +92,20 @@ export function SegmentedImageDisplay({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-zinc-800">
-              Segmented Images Generated
+              Segmented Images
+              {generatingIndices.size > 0 && (
+                <span className="ml-2 text-sm font-normal text-zinc-600">
+                  ({generatingIndices.size} generating...)
+                </span>
+              )}
             </h3>
             <p className="text-sm text-zinc-600">
               {successCount} of {totalSegments} images generated successfully using {provider}
+              {generatingIndices.size > 0 && (
+                <span className="ml-1 text-orange-600">
+                  • {generatingIndices.size} in progress
+                </span>
+              )}
             </p>
           </div>
           {successCount > 0 && (
@@ -104,7 +116,7 @@ export function SegmentedImageDisplay({
               className="flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Download All
+              Download All ({successCount})
             </Button>
           )}
         </div>
@@ -115,11 +127,13 @@ export function SegmentedImageDisplay({
         {results.map((result, index) => (
           <Card key={index} className="overflow-hidden">
             <div className="aspect-square relative">
-              {regeneratingIndex === index ? (
+              {(regeneratingIndex === index || generatingIndices.has(index)) ? (
                 <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
                   <div className="text-center">
                     <Spinner className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-600">Regenerating...</p>
+                    <p className="text-sm text-zinc-600">
+                      {regeneratingIndex === index ? "Regenerating..." : "Generating..."}
+                    </p>
                   </div>
                 </div>
               ) : result.image ? (
