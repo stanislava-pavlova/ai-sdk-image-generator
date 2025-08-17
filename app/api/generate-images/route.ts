@@ -66,8 +66,7 @@ interface SegmentedImageResult {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  console.log("Received request body:", JSON.stringify(body, null, 2));
-  return;
+  console.log("Received request body:", JSON.stringify(body));
 
   // Normalize request to always use segments format
   let segments: string[];
@@ -75,10 +74,12 @@ export async function POST(req: NextRequest) {
   let modelId: string;
   let characterData: any = null;
   let contextData: any = null;
+  let forceSegmentedResponse = false;
 
   if ("segments" in body) {
     // Segmented request
     ({ segments, provider, modelId, characterData, contextData } = body);
+    forceSegmentedResponse = true; // Always return segmented format for editing
   } else {
     // Single prompt request - convert to segments format
     const { prompt, provider: p, modelId: m } = body as GenerateImageRequest;
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     modelId,
     characterData,
     contextData,
-  });
+  }, forceSegmentedResponse);
 }
 
 async function handleImageGeneration({
@@ -102,7 +103,7 @@ async function handleImageGeneration({
   modelId,
   characterData,
   contextData,
-}: GenerateSegmentedImagesRequest) {
+}: GenerateSegmentedImagesRequest, forceSegmentedResponse: boolean = false) {
   if (
     !Array.isArray(segments) ||
     segments?.length === 0 ||
@@ -177,7 +178,8 @@ async function handleImageGeneration({
   );
 
   // For single image requests, return the original format for backward compatibility
-  if (!isMultipleSegments && results.length === 1) {
+  // UNLESS forceSegmentedResponse is true (for editing functionality)
+  if (!isMultipleSegments && results.length === 1 && !forceSegmentedResponse) {
     const result = results[0];
     if (result.image) {
       return NextResponse.json(

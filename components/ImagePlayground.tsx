@@ -22,6 +22,9 @@ export function ImagePlayground() {
 
   const [segmentedImages, setSegmentedImages] = useState<any>(null);
   const [isGeneratingSegments, setIsGeneratingSegments] = useState(false);
+  const [originalSegments, setOriginalSegments] = useState<string[]>([]);
+  const [characterData, setCharacterData] = useState<any>(null);
+  const [contextData, setContextData] = useState<any>(null);
 
   const [showProviders, setShowProviders] = useState(true);
   const [selectedModels, setSelectedModels] = useState<
@@ -69,6 +72,11 @@ export function ImagePlayground() {
         (s: any) => s.selectedSentence
       );
 
+      // Store original data for editing
+      setOriginalSegments(segments);
+      setCharacterData(data.characterData);
+      setContextData(data.contextData);
+
       const requestBody = {
         segments,
         provider: "vertex",
@@ -97,6 +105,63 @@ export function ImagePlayground() {
       // Handle error - show a toast or error message
     } finally {
       setIsGeneratingSegments(false);
+    }
+  };
+
+  const handleEditImage = async (segmentIndex: number, newPrompt: string) => {
+    if (!segmentedImages) return;
+
+    try {
+      // Create a new segments array with the edited prompt
+      const updatedSegments = [...originalSegments];
+      updatedSegments[segmentIndex] = newPrompt;
+
+      // Generate only the specific image
+      const response = await fetch("/api/generate-images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          segments: [newPrompt], // Only regenerate this one
+          provider: "vertex",
+          modelId: selectedModels.vertex,
+          characterData,
+          contextData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to regenerate image");
+      }
+
+      const result = await response.json();
+      console.log("Edit response:", result);
+      
+      // The API now always returns segmented format for editing
+      if (result.results && result.results[0]) {
+        const newImageResult = {
+          ...result.results[0],
+          segmentIndex: segmentIndex,
+          prompt: newPrompt, // Ensure we use the new prompt text
+        };
+
+        // Update the specific image in the results
+        setSegmentedImages((prev: any) => ({
+          ...prev,
+          results: prev.results.map((r: any, i: number) =>
+            i === segmentIndex ? newImageResult : r
+          ),
+        }));
+
+        // Update the original segments array
+        setOriginalSegments(updatedSegments);
+      } else {
+        throw new Error("Invalid response format from API");
+      }
+    } catch (error) {
+      console.error("Error editing image:", error);
+      throw error; // Re-throw to be handled by the UI
     }
   };
 
@@ -134,6 +199,7 @@ export function ImagePlayground() {
             totalSegments={segmentedImages.totalSegments}
             successCount={segmentedImages.successCount}
             provider={segmentedImages.provider}
+            onEditImage={handleEditImage}
           />
         )}
 

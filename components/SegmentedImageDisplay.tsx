@@ -1,6 +1,8 @@
-import { Download, Eye, FileText } from "lucide-react";
+import { Download, Eye, FileText, Edit, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 
 interface SegmentedImageResult {
@@ -15,6 +17,7 @@ interface SegmentedImageDisplayProps {
   totalSegments: number;
   successCount: number;
   provider: string;
+  onEditImage?: (segmentIndex: number, newPrompt: string) => void;
 }
 
 export function SegmentedImageDisplay({
@@ -22,9 +25,13 @@ export function SegmentedImageDisplay({
   totalSegments,
   successCount,
   provider,
+  onEditImage,
 }: SegmentedImageDisplayProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editedPrompt, setEditedPrompt] = useState<string>("");
+  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
 
   const handleImageClick = (imageData: string, prompt: string) => {
     setSelectedImage(imageData);
@@ -48,6 +55,32 @@ export function SegmentedImageDisplay({
         }, index * 500); // Stagger downloads
       }
     });
+  };
+
+  const handleEditStart = (index: number, currentPrompt: string) => {
+    setEditingIndex(index);
+    setEditedPrompt(currentPrompt);
+  };
+
+  const handleEditCancel = () => {
+    setEditingIndex(null);
+    setEditedPrompt("");
+  };
+
+  const handleEditSave = async (index: number) => {
+    if (!editedPrompt.trim() || !onEditImage) return;
+    
+    setRegeneratingIndex(index);
+    setEditingIndex(null);
+    
+    try {
+      await onEditImage(index, editedPrompt.trim());
+    } catch (error) {
+      console.error("Error regenerating image:", error);
+    } finally {
+      setRegeneratingIndex(null);
+      setEditedPrompt("");
+    }
   };
 
   return (
@@ -82,7 +115,14 @@ export function SegmentedImageDisplay({
         {results.map((result, index) => (
           <Card key={index} className="overflow-hidden">
             <div className="aspect-square relative">
-              {result.image ? (
+              {regeneratingIndex === index ? (
+                <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <Spinner className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-600">Regenerating...</p>
+                  </div>
+                </div>
+              ) : result.image ? (
                 <div className="relative group">
                   <img
                     src={`data:image/png;base64,${result.image}`}
@@ -112,24 +152,71 @@ export function SegmentedImageDisplay({
                 <span className="text-sm font-medium text-zinc-700">
                   Segment {index + 1}
                 </span>
-                {result.image && (
-                  <Button
-                    onClick={() => handleDownload(result.image!, index)}
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                  >
-                    <Download className="w-3 h-3" />
-                  </Button>
-                )}
+                <div className="flex items-center gap-1">
+                  {onEditImage && (
+                    <Button
+                      onClick={() => handleEditStart(index, result.prompt)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      title="Edit prompt and regenerate"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  )}
+                  {result.image && (
+                    <Button
+                      onClick={() => handleDownload(result.image!, index)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      title="Download image"
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
               
-              <p className="text-xs text-zinc-600 line-clamp-3">
-                {result.prompt.length > 100
-                  ? `${result.prompt.substring(0, 100)}...`
-                  : result.prompt
-                }
-              </p>
+              {editingIndex === index ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedPrompt}
+                    onChange={(e) => setEditedPrompt(e.target.value)}
+                    placeholder="Edit the prompt for this image..."
+                    rows={3}
+                    className="text-xs resize-none min-h-28"
+                  />
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      onClick={handleEditCancel}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleEditSave(index)}
+                      variant="default"
+                      size="sm"
+                      className="h-6 px-2"
+                      disabled={!editedPrompt.trim()}
+                    >
+                      <Check className="w-3 h-3 mr-1" />
+                      Regenerate
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-600 line-clamp-3">
+                  {result.prompt.length > 100
+                    ? `${result.prompt.substring(0, 100)}...`
+                    : result.prompt
+                  }
+                </p>
+              )}
             </div>
           </Card>
         ))}
