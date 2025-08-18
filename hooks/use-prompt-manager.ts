@@ -1,13 +1,13 @@
 import { useState, useRef } from "react";
 import { FileUpload, TextSegmentData, StoryConfigData } from "@/lib/prompt-types";
-import { segmentBulgarianText } from "@/lib/text-segmentation";
+import { segmentText } from "@/lib/text-segmentation";
 
 export function usePromptManager() {
   // JSON story config
   const [storyConfigFile, setStoryConfigFile] = useState<FileUpload | null>(null);
   const [storyConfigData, setStoryConfigData] = useState<StoryConfigData | null>(null);
 
-  // Bulgarian text segmentation state
+  // Тext segmentation state
   const [textFile, setTextFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState<string>("");
   const [segmentData, setSegmentData] = useState<TextSegmentData | null>(null);
@@ -45,7 +45,7 @@ export function usePromptManager() {
     }
   };
 
-  // Bulgarian text file handlers
+  // Тext file handlers
   const handleTextFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -89,8 +89,8 @@ export function usePromptManager() {
     setError(null);
 
     try {
-      // Segment the Bulgarian text
-      const segments = segmentBulgarianText(textContent, 25, 25);
+      // Segment the Тext
+      const segments = segmentText(textContent, 25, 25);
 
       if (segments.length === 0) {
         setError("No segments could be extracted from the text");
@@ -139,7 +139,7 @@ export function usePromptManager() {
     storyConfigFile,
     storyConfigData,
 
-    // Bulgarian text state
+    // Тext state
     textFile,
     textContent,
     segmentData,

@@ -175,7 +175,7 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
                 className="w-full h-12 bg-white border-zinc-200 hover:bg-zinc-50 border-dashed"
               >
                 <Upload className="w-5 h-5 mr-2" />
-                Upload Bulgarian Text (.txt)
+                Upload Text (.txt)
               </Button>
             )}
           </div>
@@ -183,9 +183,9 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
           <div className="flex items-center justify-between pt-1">
             <div className="text-xs text-zinc-500">
               {textFile ? (
-                <span>Bulgarian text uploaded • Upload character/context for enhanced prompts</span>
+                <span>Тext uploaded • Upload character/context for enhanced prompts</span>
               ) : (
-                <span>Upload Bulgarian text (.txt) to generate segmented images</span>
+                <span>Upload text (.txt) to generate segmented images</span>
               )}
             </div>
 

@@ -1,4 +1,4 @@
-// Bulgarian text segmentation utilities
+// Тext segmentation utilities
 
 export interface TextSegment {
   text: string;
@@ -16,50 +16,54 @@ export interface WindowSelection {
   distanceFromCenter: number;
 }
 
-// Common Bulgarian abbreviations that should not trigger sentence splits
-const BULGARIAN_ABBREVIATIONS = new Set([
-  "т.н.",
-  "т.е.",
-  "напр.",
-  "пр.",
-  "др.",
-  "проф.",
-  "ул.",
-  "бул.",
-  "пл.",
-  "кв.",
-  "ет.",
-  "стр.",
-  "сп.",
-  "вж.",
-  "срв.",
-  "относ.",
-  "съотв.",
-  "понаст.",
-  "извед.",
-  "изд.",
-  "том.",
-  "кн.",
-  "г.",
-  "в.",
-  "м.",
-  "км.",
-  "см.",
-  "мм.",
-  "кг.",
-  "гр.",
-  "мг.",
-  "л.",
-  "мл.",
-  "ч.",
-  "мин.",
-  "сек.",
+// Common English abbreviations that should not trigger sentence splits
+const ENGLISH_ABBREVIATIONS = new Set([
+  // General
+  "e.g.",
+  "i.e.",
+  "etc.",
+  "vs.",
+  "cf.",
+  // Titles
+  "mr.",
+  "mrs.",
+  "ms.",
+  "dr.",
+  "prof.",
+  "sr.",
+  "jr.",
+  "st.",
+  // Time
+  "a.m.",
+  "p.m.",
+  // Measurements and numbering
+  "no.",
+  "fig.",
+  "eq.",
+  // Months
+  "jan.",
+  "feb.",
+  "mar.",
+  "apr.",
+  "jun.",
+  "jul.",
+  "aug.",
+  "sep.",
+  "sept.",
+  "oct.",
+  "nov.",
+  "dec.",
+  // Degrees
+  "ph.d.",
+  "m.d.",
+  "b.s.",
+  "m.s.",
 ]);
 
-const isLowercaseLetter = (ch: string): boolean => /[a-zа-я]/.test(ch);
+const isLowercaseLetter = (ch: string): boolean => /[a-z]/.test(ch);
 
 // Build a list of abbreviation endings that actually end with a dot
-const dotAbbreviations = Array.from(BULGARIAN_ABBREVIATIONS)
+const dotAbbreviations = Array.from(ENGLISH_ABBREVIATIONS)
   .filter((abbr) => abbr.endsWith("."))
   .sort((a, b) => b.length - a.length) // match longer first (e.g., "т.е." before "г.")
   .map((abbr) => abbr.toLowerCase());
@@ -79,7 +83,7 @@ const isClosingWrapper = (ch: string): boolean => {
 };
 
 /**
- * Parses Bulgarian text into sentences, handling abbreviations and context around dots
+ * Parses Text into sentences, handling abbreviations and context around dots
  */
 export function parseTextIntoSentences(text: string): string[] {
   if (!text || text.trim().length === 0) {
@@ -128,7 +132,7 @@ export function parseTextIntoSentences(text: string): string[] {
         const nextCh = j < normalizedText.length ? normalizedText[j] : "";
 
         // Heuristics:
-        // - If next is a lowercase letter (e.g., continuation like "пр. залез"), don't end
+        // - If next is a lowercase letter (e.g., continuation like "e.g. example"), don't end
         // - If next is a digit (e.g., decimals like 3.14), don't end
         // - Otherwise, end the sentence (e.g., space + uppercase or end-of-text)
         if (nextCh && (isLowercaseLetter(nextCh) || /[0-9]/.test(nextCh))) {
@@ -298,9 +302,9 @@ function createSegmentFromWindow(
 }
 
 /**
- * Main function to segment Bulgarian text into windows and create representative text segments
+ * Main function to segment text into windows and create representative text segments
  */
-export function segmentBulgarianText(
+export function segmentText(
   text: string,
   windowSize: number = 25,
   step: number = 25
