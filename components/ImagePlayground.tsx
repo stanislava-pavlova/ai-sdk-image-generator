@@ -138,8 +138,7 @@ export function ImagePlayground() {
 
     try {
       const segments = data.segmentData.segments.map((s: any) => s.selectedSentence);
-      console.log("Segments:", segments);
-      return;
+
       // Store original data for editing
       setOriginalSegments(segments);
       setStoryConfigData(data.storyConfigData);
