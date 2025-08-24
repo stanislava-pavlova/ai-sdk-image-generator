@@ -60,6 +60,7 @@ export function ImagePlayground() {
           modelId: selectedModels.vertex,
           storyConfigData: configData,
           useRawPrompts,
+          originalSegmentIndex: segmentIndex,
         }),
       });
 

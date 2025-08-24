@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
     modelId,
     storyConfigData = null,
     useRawPrompts = false,
-  } = body as GenerateSegmentedImagesRequest & { storyConfigData?: StoryConfigData };
+    originalSegmentIndex,
+  } = body as GenerateSegmentedImagesRequest & {
+    storyConfigData?: StoryConfigData;
+    originalSegmentIndex?: number;
+  };
 
   const forceSegmentedResponse = true; // Always return segmented format
 
@@ -81,6 +85,7 @@ export async function POST(req: NextRequest) {
       modelId,
       storyConfigData,
       useRawPrompts,
+      originalSegmentIndex,
     },
     forceSegmentedResponse
   );
@@ -93,12 +98,14 @@ async function handleImageGeneration(
     modelId,
     storyConfigData,
     useRawPrompts = false,
+    originalSegmentIndex,
   }: {
     segments: string[];
     provider: ProviderKey;
     modelId: string;
     storyConfigData: StoryConfigData | null;
     useRawPrompts?: boolean;
+    originalSegmentIndex?: number;
   },
   forceSegmentedResponse: boolean = false
 ) {
@@ -123,11 +130,16 @@ async function handleImageGeneration(
     const segment = segments[i];
     const startTime = performance.now();
 
+    // Use the original segment index if provided (for single image generation),
+    // otherwise use the loop index (for batch generation)
+    const segmentIndex = originalSegmentIndex !== undefined ? originalSegmentIndex : i;
+
     try {
       // Use raw prompt if useRawPrompts flag is set (for manual editing), otherwise generate with AI
       const prompt = useRawPrompts
         ? segment
-        : await generatePromptWithModel(storyConfigData, segment);
+        : await generatePromptWithModel(storyConfigData, segment, segmentIndex);
+
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
@@ -164,7 +176,7 @@ async function handleImageGeneration(
       results.push({
         segmentIndex: i,
         error: "Failed to generate image for this segment",
-        prompt: generatePrompt(storyConfigData, segment),
+        prompt: generatePrompt(storyConfigData, segment, segmentIndex),
       });
     }
   }
