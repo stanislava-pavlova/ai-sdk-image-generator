@@ -45,6 +45,9 @@ export function ImagePlayground() {
     // Use override data if provided, otherwise fall back to state
     const configData = storyConfigOverride !== undefined ? storyConfigOverride : storyConfigData;
 
+    // If storyConfigOverride is explicitly null, this is a manual edit - use raw prompts
+    const useRawPrompts = storyConfigOverride === null;
+
     try {
       const response = await fetch("/api/generate-images", {
         method: "POST",
@@ -56,6 +59,7 @@ export function ImagePlayground() {
           provider: "vertex",
           modelId: selectedModels.vertex,
           storyConfigData: configData,
+          useRawPrompts,
         }),
       });
 

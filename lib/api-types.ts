@@ -11,6 +11,7 @@ export interface GenerateSegmentedImagesRequest {
   provider: ProviderKey;
   modelId: string;
   storyConfigData?: any;
+  useRawPrompts?: boolean;
 }
 
 export interface GenerateImageResponse {

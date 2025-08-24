@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     provider,
     modelId,
     storyConfigData = null,
+    useRawPrompts = false,
   } = body as GenerateSegmentedImagesRequest & { storyConfigData?: StoryConfigData };
 
   const forceSegmentedResponse = true; // Always return segmented format
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       provider,
       modelId,
       storyConfigData,
+      useRawPrompts,
     },
     forceSegmentedResponse
   );
@@ -90,11 +92,13 @@ async function handleImageGeneration(
     provider,
     modelId,
     storyConfigData,
+    useRawPrompts = false,
   }: {
     segments: string[];
     provider: ProviderKey;
     modelId: string;
     storyConfigData: StoryConfigData | null;
+    useRawPrompts?: boolean;
   },
   forceSegmentedResponse: boolean = false
 ) {
@@ -120,7 +124,10 @@ async function handleImageGeneration(
     const startTime = performance.now();
 
     try {
-      const prompt = await generatePromptWithModel(storyConfigData, segment);
+      // Use raw prompt if useRawPrompts flag is set (for manual editing), otherwise generate with AI
+      const prompt = useRawPrompts
+        ? segment
+        : await generatePromptWithModel(storyConfigData, segment);
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
