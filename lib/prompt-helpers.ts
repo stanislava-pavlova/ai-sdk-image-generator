@@ -94,7 +94,6 @@ export async function generatePromptWithModel(
     const camera = storyConfigData?.camera_baseline;
     const globalConstraints = storyConfigData?.global_constraints;
 
-    // Build context more efficiently
     const contextLines = buildContextLines({
       identity,
       style,
