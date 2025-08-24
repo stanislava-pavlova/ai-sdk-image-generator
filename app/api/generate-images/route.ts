@@ -6,7 +6,7 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateSegmentedImagesRequest } from "@/lib/api-types";
-import { generatePrompt } from "@/lib/prompt-helpers";
+import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
 /**
@@ -64,13 +64,12 @@ interface SegmentedImageResult {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  console.log("Received request body:", JSON.stringify(body));
-
   const {
     segments,
     provider,
     modelId,
     storyConfigData = null,
+    useRawPrompts = false,
   } = body as GenerateSegmentedImagesRequest & { storyConfigData?: StoryConfigData };
 
   const forceSegmentedResponse = true; // Always return segmented format
@@ -81,6 +80,7 @@ export async function POST(req: NextRequest) {
       provider,
       modelId,
       storyConfigData,
+      useRawPrompts,
     },
     forceSegmentedResponse
   );
@@ -92,11 +92,13 @@ async function handleImageGeneration(
     provider,
     modelId,
     storyConfigData,
+    useRawPrompts = false,
   }: {
     segments: string[];
     provider: ProviderKey;
     modelId: string;
     storyConfigData: StoryConfigData | null;
+    useRawPrompts?: boolean;
   },
   forceSegmentedResponse: boolean = false
 ) {
@@ -122,9 +124,10 @@ async function handleImageGeneration(
     const startTime = performance.now();
 
     try {
-      const prompt = generatePrompt(storyConfigData, segment);
-      console.log(`Generated prompt: ${i}`, prompt);
-      // return;
+      // Use raw prompt if useRawPrompts flag is set (for manual editing), otherwise generate with AI
+      const prompt = useRawPrompts
+        ? segment
+        : await generatePromptWithModel(storyConfigData, segment);
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
