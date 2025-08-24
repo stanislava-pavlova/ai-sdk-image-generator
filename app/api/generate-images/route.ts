@@ -6,7 +6,7 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateSegmentedImagesRequest } from "@/lib/api-types";
-import { generatePrompt } from "@/lib/prompt-helpers";
+import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
 /**
@@ -64,8 +64,6 @@ interface SegmentedImageResult {
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  console.log("Received request body:", JSON.stringify(body));
-
   const {
     segments,
     provider,
@@ -122,9 +120,7 @@ async function handleImageGeneration(
     const startTime = performance.now();
 
     try {
-      const prompt = generatePrompt(storyConfigData, segment);
-      console.log(`Generated prompt: ${i}`, prompt);
-      // return;
+      const prompt = await generatePromptWithModel(storyConfigData, segment);
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
