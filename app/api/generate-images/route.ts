@@ -5,7 +5,7 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 // import { replicate } from "@ai-sdk/replicate";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
-import { GenerateSegmentedImagesRequest } from "@/lib/api-types";
+import { GenerateSegmentedImagesRequest, AspectRatio } from "@/lib/api-types";
 import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
     storyConfigData = null,
     useRawPrompts = false,
     originalSegmentIndex,
+    aspectRatio = DEFAULT_ASPECT_RATIO,
   } = body as GenerateSegmentedImagesRequest & {
     storyConfigData?: StoryConfigData;
     originalSegmentIndex?: number;
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
       storyConfigData,
       useRawPrompts,
       originalSegmentIndex,
+      aspectRatio,
     },
     forceSegmentedResponse
   );
@@ -99,6 +101,7 @@ async function handleImageGeneration(
     storyConfigData,
     useRawPrompts = false,
     originalSegmentIndex,
+    aspectRatio = DEFAULT_ASPECT_RATIO,
   }: {
     segments: string[];
     provider: ProviderKey;
@@ -106,6 +109,7 @@ async function handleImageGeneration(
     storyConfigData: StoryConfigData | null;
     useRawPrompts?: boolean;
     originalSegmentIndex?: number;
+    aspectRatio?: AspectRatio;
   },
   forceSegmentedResponse: boolean = false
 ) {
@@ -145,7 +149,7 @@ async function handleImageGeneration(
         prompt,
         ...(config.dimensionFormat === "size"
           ? { size: DEFAULT_IMAGE_SIZE }
-          : { aspectRatio: DEFAULT_ASPECT_RATIO }),
+          : { aspectRatio }),
         seed: Math.floor(Math.random() * 1000000),
         // Vertex AI only accepts a specified seed if watermark is disabled.
         providerOptions: { vertex: { addWatermark: false } },

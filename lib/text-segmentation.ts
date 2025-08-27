@@ -179,17 +179,14 @@ export function tokenizeText(text: string): string[] {
 /**
  * Main function to segment text into windows while respecting sentence boundaries
  */
-export function segmentText(
-  text: string,
-  targetWordsPerSegment: number = 25
-): WindowSelection[] {
+export function segmentText(text: string, targetWordsPerSegment: number = 25): WindowSelection[] {
   if (!text || text.trim().length === 0) {
     return [];
   }
 
   // Parse text into sentences first
   const sentences = parseTextIntoSentences(text);
-  
+
   if (sentences.length === 0) {
     return [];
   }
@@ -207,15 +204,13 @@ export function segmentText(
 
     // Check if adding this sentence would make the segment too large
     const potentialWordCount = currentWordCount + sentenceWordCount;
-    
-    // If we have content and adding this sentence would exceed 1.5x target, finalize current segment
-    if (currentSegmentSentences.length > 0 && 
-        potentialWordCount > targetWordsPerSegment * 1.5) {
-      
+
+    // If we have content and adding this sentence would exceed 1.4x target, finalize current segment
+    if (currentSegmentSentences.length > 0 && potentialWordCount > targetWordsPerSegment * 1.4) {
       // Finalize current segment
       const segmentText = currentSegmentSentences.join(" ");
       const segmentWords = tokenizeText(segmentText);
-      
+
       selections.push({
         selectedSentence: segmentText,
         windowWords: segmentWords,
@@ -238,7 +233,7 @@ export function segmentText(
     if (currentWordCount >= targetWordsPerSegment || i === sentences.length - 1) {
       const segmentText = currentSegmentSentences.join(" ");
       const segmentWords = tokenizeText(segmentText);
-      
+
       selections.push({
         selectedSentence: segmentText,
         windowWords: segmentWords,

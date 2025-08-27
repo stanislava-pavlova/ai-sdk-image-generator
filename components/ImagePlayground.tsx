@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { PromptInput } from "@/components/PromptInput";
 import { SegmentedImageDisplay } from "@/components/SegmentedImageDisplay";
 import { MODEL_CONFIGS, ProviderKey, ModelMode } from "@/lib/provider-config";
+import { AspectRatio } from "@/lib/api-types";
 import { Header } from "./Header";
 import { Card } from "@/components/ui/card";
 
@@ -26,6 +27,8 @@ export function ImagePlayground() {
     MODEL_CONFIGS.performance
   );
   const [mode, setMode] = useState<ModelMode>("performance");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
+  const [wordsPerSegment, setWordsPerSegment] = useState<number>(25);
   const toggleView = () => {
     setShowProviders((prev) => !prev);
   };
@@ -61,6 +64,7 @@ export function ImagePlayground() {
           storyConfigData: configData,
           useRawPrompts,
           originalSegmentIndex: segmentIndex,
+          aspectRatio,
         }),
       });
 
@@ -225,6 +229,10 @@ export function ImagePlayground() {
           onToggleProviders={toggleView}
           mode={mode}
           onModeChange={handleModeChange}
+          aspectRatio={aspectRatio}
+          onAspectRatioChange={setAspectRatio}
+          wordsPerSegment={wordsPerSegment}
+          onWordsPerSegmentChange={setWordsPerSegment}
         />
 
         {/* Loading state for segmented generation */}

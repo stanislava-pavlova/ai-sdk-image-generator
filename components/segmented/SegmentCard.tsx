@@ -41,7 +41,7 @@ export function SegmentCard({
 }: SegmentCardProps) {
   return (
     <Card className="overflow-hidden">
-      <div className="aspect-square relative">
+      <div className="aspect-auto relative">
         {isRegenerating || isGenerating ? (
           <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
             <div className="text-center">
