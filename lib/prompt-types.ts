@@ -43,5 +43,5 @@ export interface StoryConfigData {
     composition?: string;
     depth_of_field?: string;
   };
-  global_constraints?: string;
+  additional_context?: string;
 }

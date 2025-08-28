@@ -270,9 +270,7 @@ export function PromptInput({
                 disabled={isLoading || isProcessing || !textContent.trim()}
                 className="h-8 px-4 rounded-full bg-black flex items-center justify-center disabled:opacity-50 text-white text-sm"
               >
-                {isLoading || isProcessing ? (
-                  <Spinner className="w-3 h-3 text-white" />
-                ) : segmentData ? (
+                {segmentData ? (
                   <>Generate {segmentData.totalSegments} Images</>
                 ) : (
                   "Process Text"

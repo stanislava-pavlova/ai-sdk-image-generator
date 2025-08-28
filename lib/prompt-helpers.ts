@@ -13,10 +13,10 @@ function getAgeInfoForSegment(identity_core: any, segmentIndex: number): { age: 
 
   // Find the appropriate age milestone for this segment
   const milestones = identity_core.age_progression.milestones;
-  
+
   for (const range in milestones) {
     const milestone = milestones[range];
-    
+
     // Parse range (e.g., "0-2", "3-5", "9+")
     if (range.includes('+')) {
       const minSegment = parseInt(range.replace('+', ''));
@@ -34,11 +34,15 @@ function getAgeInfoForSegment(identity_core: any, segmentIndex: number): { age: 
       }
     }
   }
-  
+
   return { age: identity_core.base_age, ageDescription: "" };
 }
 
-export function generatePrompt(storyConfig: StoryConfigData | null, segmentText: string, segmentIndex: number = 0): string {
+export function generatePrompt(
+  storyConfig: StoryConfigData | null,
+  segmentText: string,
+  segmentIndex: number = 0
+): string {
   if (!storyConfig) {
     return segmentText.trim() || "no scene description";
   }
@@ -52,7 +56,8 @@ export function generatePrompt(storyConfig: StoryConfigData | null, segmentText:
   const values = identity_core.values || "";
   const hair = identity_core.hair_general || "styled hair";
   const demeanor = identity_core.demeanor || "composed";
-  
+  const yearOfBirth = identity_core.year_of_birth || "";
+
   // Age progression logic
   const { age, ageDescription } = getAgeInfoForSegment(identity_core, segmentIndex);
   const ageInfo = age ? `${age} years old` : "";
@@ -72,7 +77,9 @@ export function generatePrompt(storyConfig: StoryConfigData | null, segmentText:
   const segment = segmentText.trim() || "no scene description";
 
   return (
-    `${artStyle} ${perspective} of ${name}${origin ? `, ${origin}` : ""}${ageInfo ? `, ${ageInfo}` : ""}${ageContext}. Scene: ${segment}. ` +
+    `${artStyle} ${perspective} of ${name}${origin ? `, ${origin}` : ""}${
+      yearOfBirth ? ` (born in ${yearOfBirth})` : ""
+    }${ageInfo ? `, ${ageInfo}` : ""}${ageContext}. Scene: ${segment}. ` +
     `${hair}, with a ${demeanor} demeanor.${domains ? ` Active in ${domains}.` : ""} ` +
     `${mood} mood with a ${colorPalette} color palette. ` +
     `Shot with a ${lensInfo}, ${composition}, ${depthOfField}. ` +
@@ -102,7 +109,8 @@ function buildContextLines({
   if (identity?.values) contextLines.push(`values: ${identity.values}`);
   if (identity?.hair_general) contextLines.push(`hair: ${identity.hair_general}`);
   if (identity?.demeanor) contextLines.push(`demeanor: ${identity.demeanor}`);
-  
+  if (identity?.year_of_birth) contextLines.push(`year of birth: ${identity.year_of_birth}`);
+
   // Age context for this specific segment
   if (identity) {
     const { age, ageDescription } = getAgeInfoForSegment(identity, segmentIndex);
@@ -111,7 +119,7 @@ function buildContextLines({
   }
 
   // Style context
-  if (style?.art_style) contextLines.push(`art_style: ${style.art_style}`);
+  if (style?.art_style) contextLines.push(`art style: ${style.art_style}`);
   if (style?.mood) contextLines.push(`mood: ${style.mood}`);
   if (style?.color_palette_base) contextLines.push(`palette: ${style.color_palette_base}`);
 
@@ -119,10 +127,11 @@ function buildContextLines({
   if (camera?.perspective) contextLines.push(`perspective: ${camera.perspective}`);
   if (camera?.lens_mm) contextLines.push(`lens: ${camera.lens_mm}mm`);
   if (camera?.composition) contextLines.push(`composition: ${camera.composition}`);
-  if (camera?.depth_of_field) contextLines.push(`dof: ${camera.depth_of_field}`);
+  if (camera?.depth_of_field) contextLines.push(`depth of field: ${camera.depth_of_field}`);
 
   // Global constraints
-  if (globalConstraints?.trim()) contextLines.push(`constraints: ${globalConstraints.trim()}`);
+  if (globalConstraints?.trim())
+    contextLines.push(`additional context: ${globalConstraints.trim()}`);
 
   return contextLines;
 }
@@ -139,7 +148,7 @@ export async function generatePromptWithModel(
     const identity = storyConfigData?.identity_core;
     const style = storyConfigData?.style_throughline;
     const camera = storyConfigData?.camera_baseline;
-    const globalConstraints = storyConfigData?.global_constraints;
+    const globalConstraints = storyConfigData?.additional_context;
 
     const contextLines = buildContextLines({
       identity,
