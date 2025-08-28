@@ -28,7 +28,7 @@ export function ImagePlayground() {
   );
   const [mode, setMode] = useState<ModelMode>("performance");
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
-  const [wordsPerSegment, setWordsPerSegment] = useState<number>(25);
+
   const toggleView = () => {
     setShowProviders((prev) => !prev);
   };
@@ -231,8 +231,6 @@ export function ImagePlayground() {
           onModeChange={handleModeChange}
           aspectRatio={aspectRatio}
           onAspectRatioChange={setAspectRatio}
-          wordsPerSegment={wordsPerSegment}
-          onWordsPerSegmentChange={setWordsPerSegment}
         />
 
         {/* Loading state for segmented generation */}

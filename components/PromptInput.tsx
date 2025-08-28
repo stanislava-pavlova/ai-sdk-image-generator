@@ -19,8 +19,6 @@ interface PromptInputProps {
   onModeChange: (mode: QualityMode) => void;
   aspectRatio: AspectRatio;
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
-  wordsPerSegment: number;
-  onWordsPerSegmentChange: (words: number) => void;
 }
 
 export function PromptInput({
@@ -28,10 +26,9 @@ export function PromptInput({
   onSegmentedSubmit,
   aspectRatio,
   onAspectRatioChange,
-  wordsPerSegment,
-  onWordsPerSegmentChange,
 }: PromptInputProps) {
   const [showSegments, setShowSegments] = useState(false);
+  const [wordsPerSegment, setWordsPerSegment] = useState<string>("25");
 
   const {
     storyConfigFile,
@@ -54,7 +51,7 @@ export function PromptInput({
     if (!textContent.trim()) return;
 
     if (!segmentData) {
-      await processTextSegmentation(wordsPerSegment);
+      await processTextSegmentation(parseInt(wordsPerSegment));
       return;
     }
 
@@ -133,7 +130,7 @@ export function PromptInput({
             <div className="flex-1">
               <WordsPerSegmentInput
                 value={wordsPerSegment}
-                onValueChange={onWordsPerSegmentChange}
+                onValueChange={(value) => setWordsPerSegment(value)}
                 disabled={isLoading}
               />
             </div>
@@ -285,7 +282,9 @@ export function PromptInput({
             {textFile ? (
               <button
                 onClick={
-                  segmentData ? handleSubmit : () => processTextSegmentation(wordsPerSegment)
+                  segmentData
+                    ? handleSubmit
+                    : () => processTextSegmentation(parseInt(wordsPerSegment))
                 }
                 disabled={isLoading || isProcessing || !textContent.trim()}
                 className="h-8 px-4 rounded-full bg-black flex items-center justify-center disabled:opacity-50 text-white text-sm"
