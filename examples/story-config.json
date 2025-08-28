@@ -3,7 +3,6 @@
     "name": "Marie Curie",
     "base_age": 25,
     "age_progression": {
-      "enabled": true,
       "milestones": {
         "0-2": {
           "age": 25,
