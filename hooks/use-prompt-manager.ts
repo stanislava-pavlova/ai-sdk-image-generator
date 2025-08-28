@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { FileUpload, TextSegmentData, StoryConfigData } from "@/lib/prompt-types";
 import { segmentText } from "@/lib/text-segmentation";
+import { readDocxContent } from "@/lib/docx-helpers";
 
 export function usePromptManager() {
   // JSON story config
@@ -50,9 +51,11 @@ export function usePromptManager() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
+
     // Validate file type
-    if (!file.name.toLowerCase().endsWith(".txt")) {
-      setError("Please select a .txt file");
+    if (!fileName.endsWith(".txt") && !fileName.endsWith(".docx")) {
+      setError("Please select a .txt or .docx file");
       return;
     }
 
@@ -60,7 +63,14 @@ export function usePromptManager() {
     setTextFile(file);
 
     try {
-      const content = await readFileContent(file);
+      let content: string;
+
+      if (fileName.endsWith(".docx")) {
+        content = await readDocxContent(file);
+      } else {
+        content = await readFileContent(file);
+      }
+
       setTextContent(content);
     } catch (err) {
       setError("Failed to read file content");
