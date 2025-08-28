@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ImageModel, experimental_generateImage as generateImage } from "ai";
 // import { openai } from "@ai-sdk/openai";
-// import { fireworks } from "@ai-sdk/fireworks";
-// import { replicate } from "@ai-sdk/replicate";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
-import { GenerateSegmentedImagesRequest } from "@/lib/api-types";
+import { GenerateSegmentedImagesRequest, AspectRatio } from "@/lib/api-types";
 import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
@@ -26,14 +24,6 @@ interface ProviderConfig {
 const providerConfig: Record<ProviderKey, ProviderConfig> = {
   // openai: {
   //   createImageModel: openai.image,
-  //   dimensionFormat: "size",
-  // },
-  // fireworks: {
-  //   createImageModel: fireworks.image,
-  //   dimensionFormat: "aspectRatio",
-  // },
-  // replicate: {
-  //   createImageModel: replicate.image,
   //   dimensionFormat: "size",
   // },
   vertex: {
@@ -70,7 +60,12 @@ export async function POST(req: NextRequest) {
     modelId,
     storyConfigData = null,
     useRawPrompts = false,
-  } = body as GenerateSegmentedImagesRequest & { storyConfigData?: StoryConfigData };
+    originalSegmentIndex,
+    aspectRatio = DEFAULT_ASPECT_RATIO,
+  } = body as GenerateSegmentedImagesRequest & {
+    storyConfigData?: StoryConfigData;
+    originalSegmentIndex?: number;
+  };
 
   const forceSegmentedResponse = true; // Always return segmented format
 
@@ -81,6 +76,8 @@ export async function POST(req: NextRequest) {
       modelId,
       storyConfigData,
       useRawPrompts,
+      originalSegmentIndex,
+      aspectRatio,
     },
     forceSegmentedResponse
   );
@@ -93,12 +90,16 @@ async function handleImageGeneration(
     modelId,
     storyConfigData,
     useRawPrompts = false,
+    originalSegmentIndex,
+    aspectRatio = DEFAULT_ASPECT_RATIO,
   }: {
     segments: string[];
     provider: ProviderKey;
     modelId: string;
     storyConfigData: StoryConfigData | null;
     useRawPrompts?: boolean;
+    originalSegmentIndex?: number;
+    aspectRatio?: AspectRatio;
   },
   forceSegmentedResponse: boolean = false
 ) {
@@ -121,19 +122,23 @@ async function handleImageGeneration(
   // Generate images for each segment
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
-    const startTime = performance.now();
+
+    // Use the original segment index if provided (for single image generation),
+    // otherwise use the loop index (for batch generation)
+    const segmentIndex = originalSegmentIndex !== undefined ? originalSegmentIndex : i;
 
     try {
       // Use raw prompt if useRawPrompts flag is set (for manual editing), otherwise generate with AI
       const prompt = useRawPrompts
         ? segment
-        : await generatePromptWithModel(storyConfigData, segment);
+        : await generatePromptWithModel(storyConfigData, segment, segmentIndex);
+
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
         ...(config.dimensionFormat === "size"
           ? { size: DEFAULT_IMAGE_SIZE }
-          : { aspectRatio: DEFAULT_ASPECT_RATIO }),
+          : { aspectRatio }),
         seed: Math.floor(Math.random() * 1000000),
         // Vertex AI only accepts a specified seed if watermark is disabled.
         providerOptions: { vertex: { addWatermark: false } },
@@ -141,9 +146,6 @@ async function handleImageGeneration(
         if (warnings?.length > 0) {
           console.warn(`Warnings for image ${i}: `, warnings);
         }
-
-        const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
-        console.log(`Completed image ${i + 1}/${segments.length} [elapsed=${elapsed}s]`);
 
         return {
           segmentIndex: i,
@@ -164,7 +166,7 @@ async function handleImageGeneration(
       results.push({
         segmentIndex: i,
         error: "Failed to generate image for this segment",
-        prompt: generatePrompt(storyConfigData, segment),
+        prompt: generatePrompt(storyConfigData, segment, segmentIndex),
       });
     }
   }

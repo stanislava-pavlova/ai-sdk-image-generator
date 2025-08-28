@@ -1,7 +1,12 @@
-import { Upload, X, FileText, BarChart3 } from "lucide-react";
+import { useState } from "react";
+import { Upload, X, FileText, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { usePromptManager } from "@/hooks/use-prompt-manager";
+import { getAgeForSegment } from "@/lib/utils";
+import { AspectRatio } from "@/lib/api-types";
+import { AspectRatioSelect } from "@/components/AspectRatioSelect";
+import { WordsPerSegmentInput } from "@/components/WordsPerSegmentInput";
 
 type QualityMode = "performance" | "quality";
 
@@ -9,12 +14,20 @@ interface PromptInputProps {
   onSegmentedSubmit?: (segmentData: any) => void;
   isLoading?: boolean;
   showProviders: boolean;
-  onToggleProviders: () => void;
   mode: QualityMode;
-  onModeChange: (mode: QualityMode) => void;
+  aspectRatio: AspectRatio;
+  onAspectRatioChange: (aspectRatio: AspectRatio) => void;
 }
 
-export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) {
+export function PromptInput({
+  isLoading,
+  onSegmentedSubmit,
+  aspectRatio,
+  onAspectRatioChange,
+}: PromptInputProps) {
+  const [showSegments, setShowSegments] = useState(false);
+  const [wordsPerSegment, setWordsPerSegment] = useState<string>("25");
+
   const {
     storyConfigFile,
     storyConfigData,
@@ -36,7 +49,7 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
     if (!textContent.trim()) return;
 
     if (!segmentData) {
-      await processTextSegmentation();
+      await processTextSegmentation(parseInt(wordsPerSegment));
       return;
     }
 
@@ -53,54 +66,71 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
       <div className="bg-zinc-50 rounded-xl p-4">
         <div className="flex flex-col gap-3">
           {/* Story Configuration Upload */}
-          <div>
-            <label className="text-sm font-medium text-zinc-700 mb-2 block">
-              Story Configuration:
-            </label>
-            <input
-              ref={storyConfigFileRef}
-              type="file"
-              accept=".json"
-              onChange={handleStoryConfigFileChange}
-              className="hidden"
-              id="story-config-file"
-            />
-            {storyConfigFile ? (
-              <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-zinc-200">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-zinc-500" />
-                  <div>
-                    <div className="text-sm font-medium text-zinc-700">
-                      {storyConfigFile.filename}
-                    </div>
-                    {storyConfigData && (
-                      <div className="text-xs text-zinc-500">
-                        Character: {storyConfigData.identity_core.name} • Style:{" "}
-                        {storyConfigData.style_throughline.art_style || "cinematic realism"}
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <label className="text-sm font-medium text-zinc-700 mb-2 block">
+                Story Configuration:
+              </label>
+              <input
+                ref={storyConfigFileRef}
+                type="file"
+                accept=".json"
+                onChange={handleStoryConfigFileChange}
+                className="hidden"
+                id="story-config-file"
+              />
+              {storyConfigFile ? (
+                <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-zinc-200">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-zinc-500" />
+                    <div>
+                      <div className="text-sm font-medium text-zinc-700">
+                        {storyConfigFile.filename}
                       </div>
-                    )}
+                      {storyConfigData && (
+                        <div className="text-xs text-zinc-500">
+                          Character: {storyConfigData.identity_core.name}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeStoryConfigFile}
+                    className="h-6 w-6 p-0 hover:bg-zinc-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
+              ) : (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={removeStoryConfigFile}
-                  className="h-6 w-6 p-0 hover:bg-zinc-100"
+                  onClick={() => storyConfigFileRef.current?.click()}
+                  className="w-full h-9 bg-white border-zinc-200 hover:bg-zinc-50"
                 >
-                  <X className="w-3 h-3" />
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Story Configuration (.json)
                 </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => storyConfigFileRef.current?.click()}
-                className="w-full h-9 bg-white border-zinc-200 hover:bg-zinc-50"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Story Configuration (.json)
-              </Button>
-            )}
+              )}
+            </div>
+            {/* Aspect Ratio Selection */}
+            <div className="flex-1">
+              <AspectRatioSelect
+                value={aspectRatio}
+                onValueChange={onAspectRatioChange}
+                disabled={isLoading}
+              />
+            </div>
+            {/* Words per Segment Selection */}
+            <div className="flex-1">
+              <WordsPerSegmentInput
+                value={wordsPerSegment}
+                onValueChange={(value) => setWordsPerSegment(value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           {/* Text Upload */}
@@ -150,15 +180,72 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
                 {/* Segmentation Status */}
                 {segmentData && (
                   <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BarChart3 className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">
-                        Text processed: {segmentData.totalSegments} segments ready
-                      </span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">
+                          Text processed: {segmentData.totalSegments} segments ready
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowSegments(!showSegments)}
+                        className="h-6 px-2 text-green-600 hover:bg-green-100"
+                      >
+                        {showSegments ? (
+                          <>
+                            <ChevronUp className="w-3 h-3 mr-1" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3 mr-1" />
+                            Preview
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <div className="text-xs text-green-600">
+                    <div className="text-xs text-green-600 mb-2">
                       Ready to generate {segmentData.totalSegments} images
                     </div>
+
+                    {/* Collapsible Segments Preview */}
+                    {showSegments && (
+                      <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+                        <div className="text-xs font-medium text-green-700 mb-2">
+                          Segments Preview:
+                        </div>
+                        {segmentData.segments.map((segment, index) => {
+                          const ageInfo = getAgeForSegment(index, storyConfigData);
+                          return (
+                            <div
+                              key={index}
+                              className="bg-white rounded p-2 border border-green-200"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-green-700">
+                                    Segment {index + 1}
+                                  </span>
+                                  {ageInfo && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                      Age {ageInfo.age}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-xs text-green-600">
+                                  {segment.wordCount} words
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-700 leading-relaxed">
+                                {segment.selectedSentence}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -191,7 +278,11 @@ export function PromptInput({ isLoading, onSegmentedSubmit }: PromptInputProps) 
 
             {textFile ? (
               <button
-                onClick={segmentData ? handleSubmit : processTextSegmentation}
+                onClick={
+                  segmentData
+                    ? handleSubmit
+                    : () => processTextSegmentation(parseInt(wordsPerSegment))
+                }
                 disabled={isLoading || isProcessing || !textContent.trim()}
                 className="h-8 px-4 rounded-full bg-black flex items-center justify-center disabled:opacity-50 text-white text-sm"
               >

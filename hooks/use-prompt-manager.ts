@@ -79,7 +79,7 @@ export function usePromptManager() {
     }
   };
 
-  const processTextSegmentation = async () => {
+  const processTextSegmentation = async (wordsPerSegment = 25) => {
     if (!textContent.trim()) {
       setError("No text content to process");
       return;
@@ -90,7 +90,7 @@ export function usePromptManager() {
 
     try {
       // Segment the Тext
-      const segments = segmentText(textContent, 25, 25);
+      const segments = segmentText(textContent, wordsPerSegment);
 
       if (segments.length === 0) {
         setError("No segments could be extracted from the text");

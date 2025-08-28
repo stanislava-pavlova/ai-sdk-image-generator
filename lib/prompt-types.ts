@@ -13,14 +13,24 @@ export interface TextSegmentData {
   totalSegments: number;
 }
 
+export interface AgeProgression {
+  milestones: Record<string, {
+    age: number;
+    description?: string;
+  }>;
+}
+
 export interface StoryConfigData {
   identity_core: {
     name: string;
+    base_age?: number;
+    age_progression?: AgeProgression;
     origin?: string;
     domains?: string;
     values?: string;
     hair_general?: string;
     demeanor?: string;
+    year_of_birth?: number;
   };
   style_throughline: {
     art_style?: string;

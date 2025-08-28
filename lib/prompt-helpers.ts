@@ -6,7 +6,39 @@ const TEXT_PROMPT_MODEL_ID = "gemini-2.0-flash-001";
 const TEXT_PROMPT_INSTRUCTION =
   "You are an expert prompt engineer for image generation models (e.g., Imagen, Flux, Vertex). Given a scene description and optional global context, craft a single high-quality and descriptive English prompt for image generation model. Rules: Prioritize the scene content; infer visuals from it. Use rich, evocative language. Describe lighting, atmosphere, and the subject's actions in detail to create a vivid image. Use global context only when it supports the scene; omit irrelevant details. Avoid generic studio backdrops and flat portrait framing unless the scene requires it. Output only the final prompt text, no preamble, no labels, no quotes.";
 
-export function generatePrompt(storyConfig: StoryConfigData | null, segmentText: string): string {
+function getAgeInfoForSegment(identity_core: any, segmentIndex: number): { age: number | undefined, ageDescription: string } {
+  if (!identity_core.age_progression?.milestones) {
+    return { age: identity_core.base_age, ageDescription: "" };
+  }
+
+  // Find the appropriate age milestone for this segment
+  const milestones = identity_core.age_progression.milestones;
+  
+  for (const range in milestones) {
+    const milestone = milestones[range];
+    
+    // Parse range (e.g., "0-2", "3-5", "9+")
+    if (range.includes('+')) {
+      const minSegment = parseInt(range.replace('+', ''));
+      if (segmentIndex >= minSegment) {
+        const desc = milestone.description ? `, ${milestone.description}` : "";
+        const result = { age: milestone.age, ageDescription: `${desc}` };
+        return result;
+      }
+    } else if (range.includes('-')) {
+      const [min, max] = range.split('-').map(n => parseInt(n));
+      if (segmentIndex >= min && segmentIndex <= max) {
+        const desc = milestone.description ? `, ${milestone.description}` : "";
+        const result = { age: milestone.age, ageDescription: `${desc}` };
+        return result;
+      }
+    }
+  }
+  
+  return { age: identity_core.base_age, ageDescription: "" };
+}
+
+export function generatePrompt(storyConfig: StoryConfigData | null, segmentText: string, segmentIndex: number = 0): string {
   if (!storyConfig) {
     return segmentText.trim() || "no scene description";
   }
@@ -20,6 +52,11 @@ export function generatePrompt(storyConfig: StoryConfigData | null, segmentText:
   const values = identity_core.values || "";
   const hair = identity_core.hair_general || "styled hair";
   const demeanor = identity_core.demeanor || "composed";
+  
+  // Age progression logic
+  const { age, ageDescription } = getAgeInfoForSegment(identity_core, segmentIndex);
+  const ageInfo = age ? `${age} years old` : "";
+  const ageContext = ageDescription || "";
 
   // Visual style
   const artStyle = style_throughline.art_style || "cinematic realism";
@@ -35,7 +72,7 @@ export function generatePrompt(storyConfig: StoryConfigData | null, segmentText:
   const segment = segmentText.trim() || "no scene description";
 
   return (
-    `${artStyle} ${perspective} of ${name}${origin ? `, ${origin}` : ""}, Scene: ${segment}. ` +
+    `${artStyle} ${perspective} of ${name}${origin ? `, ${origin}` : ""}${ageInfo ? `, ${ageInfo}` : ""}${ageContext}. Scene: ${segment}. ` +
     `${hair}, with a ${demeanor} demeanor.${domains ? ` Active in ${domains}.` : ""} ` +
     `${mood} mood with a ${colorPalette} color palette. ` +
     `Shot with a ${lensInfo}, ${composition}, ${depthOfField}. ` +
@@ -48,11 +85,13 @@ function buildContextLines({
   style,
   camera,
   globalConstraints,
+  segmentIndex = 0,
 }: {
   identity?: StoryConfigData["identity_core"];
   style?: StoryConfigData["style_throughline"];
   camera?: StoryConfigData["camera_baseline"];
   globalConstraints?: string;
+  segmentIndex?: number;
 }): string[] {
   const contextLines: string[] = [];
 
@@ -63,6 +102,13 @@ function buildContextLines({
   if (identity?.values) contextLines.push(`values: ${identity.values}`);
   if (identity?.hair_general) contextLines.push(`hair: ${identity.hair_general}`);
   if (identity?.demeanor) contextLines.push(`demeanor: ${identity.demeanor}`);
+  
+  // Age context for this specific segment
+  if (identity) {
+    const { age, ageDescription } = getAgeInfoForSegment(identity, segmentIndex);
+    if (age) contextLines.push(`age: ${age} years old`);
+    if (ageDescription) contextLines.push(`age_context: ${ageDescription.trim()}`);
+  }
 
   // Style context
   if (style?.art_style) contextLines.push(`art_style: ${style.art_style}`);
@@ -83,10 +129,11 @@ function buildContextLines({
 
 export async function generatePromptWithModel(
   storyConfigData: StoryConfigData | null,
-  segment: string
+  segment: string,
+  segmentIndex: number = 0
 ): Promise<string> {
   const scene = (segment || "").trim();
-  const fallback = generatePrompt(storyConfigData, scene);
+  const fallback = generatePrompt(storyConfigData, scene, segmentIndex);
 
   try {
     const identity = storyConfigData?.identity_core;
@@ -99,6 +146,7 @@ export async function generatePromptWithModel(
       style,
       camera,
       globalConstraints,
+      segmentIndex,
     });
 
     const contextBlock =

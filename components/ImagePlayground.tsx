@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { PromptInput } from "@/components/PromptInput";
 import { SegmentedImageDisplay } from "@/components/SegmentedImageDisplay";
 import { MODEL_CONFIGS, ProviderKey, ModelMode } from "@/lib/provider-config";
+import { AspectRatio } from "@/lib/api-types";
 import { Header } from "./Header";
 import { Card } from "@/components/ui/card";
+
+const mode = "performance";
+const showProviders = true;
+const selectedModels = MODEL_CONFIGS.performance;
 
 export function ImagePlayground() {
   const [segmentedImages, setSegmentedImages] = useState<any>(null);
@@ -21,20 +26,7 @@ export function ImagePlayground() {
     }
   }, [generatingIndices.size, isGeneratingSegments]);
 
-  const [showProviders, setShowProviders] = useState(true);
-  const [selectedModels, setSelectedModels] = useState<Record<ProviderKey, string>>(
-    MODEL_CONFIGS.performance
-  );
-  const [mode, setMode] = useState<ModelMode>("performance");
-  const toggleView = () => {
-    setShowProviders((prev) => !prev);
-  };
-
-  const handleModeChange = (newMode: ModelMode) => {
-    setMode(newMode);
-    setSelectedModels(MODEL_CONFIGS[newMode]);
-    setShowProviders(true);
-  };
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
 
   const generateSingleImage = async (
     segment: string,
@@ -60,6 +52,8 @@ export function ImagePlayground() {
           modelId: selectedModels.vertex,
           storyConfigData: configData,
           useRawPrompts,
+          originalSegmentIndex: segmentIndex,
+          aspectRatio,
         }),
       });
 
@@ -221,9 +215,9 @@ export function ImagePlayground() {
           isLoading={isGeneratingSegments}
           onSegmentedSubmit={handleSegmentedSubmit}
           showProviders={showProviders}
-          onToggleProviders={toggleView}
           mode={mode}
-          onModeChange={handleModeChange}
+          aspectRatio={aspectRatio}
+          onAspectRatioChange={setAspectRatio}
         />
 
         {/* Loading state for segmented generation */}

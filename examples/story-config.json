@@ -1,6 +1,27 @@
 {
   "identity_core": {
     "name": "Marie Curie",
+    "base_age": 25,
+    "age_progression": {
+      "milestones": {
+        "0-2": {
+          "age": 25,
+          "description": "young ambitious researcher"
+        },
+        "3-5": {
+          "age": 35,
+          "description": "established scientist"
+        },
+        "6-8": {
+          "age": 45,
+          "description": "renowned researcher"
+        },
+        "9+": {
+          "age": 55,
+          "description": "elder scientist and mentor"
+        }
+      }
+    },
     "origin": "Polish-born, worked in France",
     "domains": "physics and chemistry",
     "values": "precision, perseverance, humility",
