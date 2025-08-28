@@ -14,7 +14,6 @@ export interface TextSegmentData {
 }
 
 export interface AgeProgression {
-  enabled: boolean;
   milestones: Record<string, {
     age: number;
     description?: string;
@@ -31,6 +30,7 @@ export interface StoryConfigData {
     values?: string;
     hair_general?: string;
     demeanor?: string;
+    year_of_birth?: number;
   };
   style_throughline: {
     art_style?: string;

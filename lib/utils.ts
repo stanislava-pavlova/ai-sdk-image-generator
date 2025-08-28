@@ -16,7 +16,7 @@ export function downloadImage(imageData: string, index: number, prefix = "segmen
 }
 
 export function getAgeForSegment(segmentIndex: number, storyConfigData: StoryConfigData | null) {
-  if (!storyConfigData?.identity_core?.age_progression?.enabled) {
+  if (!storyConfigData?.identity_core?.age_progression?.milestones) {
     return null;
   }
 

@@ -7,7 +7,7 @@ const TEXT_PROMPT_INSTRUCTION =
   "You are an expert prompt engineer for image generation models (e.g., Imagen, Flux, Vertex). Given a scene description and optional global context, craft a single high-quality and descriptive English prompt for image generation model. Rules: Prioritize the scene content; infer visuals from it. Use rich, evocative language. Describe lighting, atmosphere, and the subject's actions in detail to create a vivid image. Use global context only when it supports the scene; omit irrelevant details. Avoid generic studio backdrops and flat portrait framing unless the scene requires it. Output only the final prompt text, no preamble, no labels, no quotes.";
 
 function getAgeInfoForSegment(identity_core: any, segmentIndex: number): { age: number | undefined, ageDescription: string } {
-  if (!identity_core.age_progression?.enabled || !identity_core.age_progression?.milestones) {
+  if (!identity_core.age_progression?.milestones) {
     return { age: identity_core.base_age, ageDescription: "" };
   }
 

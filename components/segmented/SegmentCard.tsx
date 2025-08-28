@@ -43,7 +43,7 @@ export function SegmentCard({
     <Card className="overflow-hidden">
       <div className="aspect-auto relative">
         {isRegenerating || isGenerating ? (
-          <div className="w-full h-full bg-zinc-100 flex items-center justify-center">
+          <div className="w-full h-full bg-zinc-100 flex items-center justify-center min-h-52">
             <div className="text-center">
               <Spinner className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
               <p className="text-sm text-zinc-600">
