@@ -8,6 +8,10 @@ import { AspectRatio } from "@/lib/api-types";
 import { Header } from "./Header";
 import { Card } from "@/components/ui/card";
 
+const mode = "performance";
+const showProviders = true;
+const selectedModels = MODEL_CONFIGS.performance;
+
 export function ImagePlayground() {
   const [segmentedImages, setSegmentedImages] = useState<any>(null);
   const [isGeneratingSegments, setIsGeneratingSegments] = useState(false);
@@ -22,22 +26,7 @@ export function ImagePlayground() {
     }
   }, [generatingIndices.size, isGeneratingSegments]);
 
-  const [showProviders, setShowProviders] = useState(true);
-  const [selectedModels, setSelectedModels] = useState<Record<ProviderKey, string>>(
-    MODEL_CONFIGS.performance
-  );
-  const [mode, setMode] = useState<ModelMode>("performance");
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
-
-  const toggleView = () => {
-    setShowProviders((prev) => !prev);
-  };
-
-  const handleModeChange = (newMode: ModelMode) => {
-    setMode(newMode);
-    setSelectedModels(MODEL_CONFIGS[newMode]);
-    setShowProviders(true);
-  };
 
   const generateSingleImage = async (
     segment: string,
@@ -226,9 +215,7 @@ export function ImagePlayground() {
           isLoading={isGeneratingSegments}
           onSegmentedSubmit={handleSegmentedSubmit}
           showProviders={showProviders}
-          onToggleProviders={toggleView}
           mode={mode}
-          onModeChange={handleModeChange}
           aspectRatio={aspectRatio}
           onAspectRatioChange={setAspectRatio}
         />

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ImageModel, experimental_generateImage as generateImage } from "ai";
 // import { openai } from "@ai-sdk/openai";
-// import { fireworks } from "@ai-sdk/fireworks";
-// import { replicate } from "@ai-sdk/replicate";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateSegmentedImagesRequest, AspectRatio } from "@/lib/api-types";
@@ -26,14 +24,6 @@ interface ProviderConfig {
 const providerConfig: Record<ProviderKey, ProviderConfig> = {
   // openai: {
   //   createImageModel: openai.image,
-  //   dimensionFormat: "size",
-  // },
-  // fireworks: {
-  //   createImageModel: fireworks.image,
-  //   dimensionFormat: "aspectRatio",
-  // },
-  // replicate: {
-  //   createImageModel: replicate.image,
   //   dimensionFormat: "size",
   // },
   vertex: {
@@ -132,7 +122,6 @@ async function handleImageGeneration(
   // Generate images for each segment
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
-    const startTime = performance.now();
 
     // Use the original segment index if provided (for single image generation),
     // otherwise use the loop index (for batch generation)
@@ -157,9 +146,6 @@ async function handleImageGeneration(
         if (warnings?.length > 0) {
           console.warn(`Warnings for image ${i}: `, warnings);
         }
-
-        const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
-        console.log(`Completed image ${i + 1}/${segments.length} [elapsed=${elapsed}s]`);
 
         return {
           segmentIndex: i,

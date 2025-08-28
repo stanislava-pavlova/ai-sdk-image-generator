@@ -14,9 +14,7 @@ interface PromptInputProps {
   onSegmentedSubmit?: (segmentData: any) => void;
   isLoading?: boolean;
   showProviders: boolean;
-  onToggleProviders: () => void;
   mode: QualityMode;
-  onModeChange: (mode: QualityMode) => void;
   aspectRatio: AspectRatio;
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
 }
@@ -91,8 +89,7 @@ export function PromptInput({
                       </div>
                       {storyConfigData && (
                         <div className="text-xs text-zinc-500">
-                          Character: {storyConfigData.identity_core.name} • Style:{" "}
-                          {storyConfigData.style_throughline.art_style || "cinematic realism"}
+                          Character: {storyConfigData.identity_core.name}
                         </div>
                       )}
                     </div>
