@@ -1,4 +1,5 @@
 import { ProviderKey } from "./provider-config";
+import { StoryConfigData, TextSegmentData } from "./prompt-types";
 
 export interface GenerateImageRequest {
   prompt: string;
@@ -13,7 +14,7 @@ export interface GenerateSegmentedImagesRequest {
   segments: string[];
   provider: ProviderKey;
   modelId: string;
-  storyConfigData?: any;
+  storyConfigData?: StoryConfigData;
   useRawPrompts?: boolean;
   aspectRatio?: AspectRatio;
 }
@@ -21,4 +22,23 @@ export interface GenerateSegmentedImagesRequest {
 export interface GenerateImageResponse {
   image?: string;
   error?: string;
+}
+
+export interface SegmentedImageResult {
+  segmentIndex: number;
+  image: string | null;
+  error?: string;
+  prompt: string;
+}
+
+export interface SegmentedImagesState {
+  results: SegmentedImageResult[];
+  totalSegments: number;
+  successCount: number;
+  provider: ProviderKey;
+}
+
+export interface SubmitData {
+  segmentData: TextSegmentData;
+  storyConfigData: StoryConfigData | null;
 }

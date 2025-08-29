@@ -3,13 +3,7 @@ import { SegmentedHeader } from "@/components/segmented/SegmentedHeader";
 import { SegmentCard } from "@/components/segmented/SegmentCard";
 import { ImagePreviewModal } from "@/components/segmented/ImagePreviewModal";
 import { downloadImage } from "@/lib/utils";
-
-interface SegmentedImageResult {
-  segmentIndex: number;
-  image?: string;
-  error?: string;
-  prompt: string;
-}
+import { SegmentedImageResult } from "@/lib/api-types";
 
 interface SegmentedImageDisplayProps {
   results: SegmentedImageResult[];

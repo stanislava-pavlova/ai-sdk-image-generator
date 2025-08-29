@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { PromptInput } from "@/components/PromptInput";
 import { SegmentedImageDisplay } from "@/components/SegmentedImageDisplay";
-import { MODEL_CONFIGS, ProviderKey, ModelMode } from "@/lib/provider-config";
-import { AspectRatio } from "@/lib/api-types";
+import { MODEL_CONFIGS } from "@/lib/provider-config";
+import { AspectRatio, SegmentedImagesState, SubmitData } from "@/lib/api-types";
+import { StoryConfigData } from "@/lib/prompt-types";
 import { Header } from "./Header";
 import { Card } from "@/components/ui/card";
 
@@ -13,10 +14,10 @@ const showProviders = true;
 const selectedModels = MODEL_CONFIGS.performance;
 
 export function ImagePlayground() {
-  const [segmentedImages, setSegmentedImages] = useState<any>(null);
+  const [segmentedImages, setSegmentedImages] = useState<SegmentedImagesState | null>(null);
   const [isGeneratingSegments, setIsGeneratingSegments] = useState(false);
   const [originalSegments, setOriginalSegments] = useState<string[]>([]);
-  const [storyConfigData, setStoryConfigData] = useState<any>(null);
+  const [storyConfigData, setStoryConfigData] = useState<StoryConfigData | null>(null);
   const [generatingIndices, setGeneratingIndices] = useState<Set<number>>(new Set());
 
   // Effect to detect when all images are done generating
@@ -32,7 +33,7 @@ export function ImagePlayground() {
     segment: string,
     segmentIndex: number,
     totalSegments: number,
-    storyConfigOverride?: any
+    storyConfigOverride?: StoryConfigData | null
   ): Promise<void> => {
     // Use override data if provided, otherwise fall back to state
     const configData = storyConfigOverride !== undefined ? storyConfigOverride : storyConfigData;
@@ -70,7 +71,7 @@ export function ImagePlayground() {
           segmentIndex: segmentIndex,
         };
 
-        setSegmentedImages((prev: any) => {
+        setSegmentedImages((prev: SegmentedImagesState | null) => {
           if (!prev) {
             // Initialize with empty results array
             return {
@@ -79,7 +80,6 @@ export function ImagePlayground() {
                 .map((_, i) => ({
                   segmentIndex: i,
                   image: null,
-                  error: null,
                   prompt: originalSegments[i] || "",
                 })),
               totalSegments,
@@ -103,7 +103,7 @@ export function ImagePlayground() {
       console.error(`Error generating image ${segmentIndex + 1}:`, error);
 
       // Update with error state
-      setSegmentedImages((prev: any) => {
+      setSegmentedImages((prev: SegmentedImagesState | null) => {
         if (!prev) return prev;
 
         const updatedResults = [...prev.results];
@@ -129,13 +129,13 @@ export function ImagePlayground() {
     }
   };
 
-  const handleSegmentedSubmit = async (data: any) => {
+  const handleSegmentedSubmit = async (data: SubmitData) => {
     setIsGeneratingSegments(true);
     setSegmentedImages(null);
     setGeneratingIndices(new Set());
 
     try {
-      const segments = data.segmentData.segments.map((s: any) => s.selectedSentence);
+      const segments = data.segmentData.segments.map((s) => s.selectedSentence);
 
       // Store original data for editing
       setOriginalSegments(segments);
@@ -145,7 +145,6 @@ export function ImagePlayground() {
       const initialResults = segments.map((segment: string, index: number) => ({
         segmentIndex: index,
         image: null,
-        error: null,
         prompt: segment,
       }));
 

@@ -3,7 +3,7 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 // import { openai } from "@ai-sdk/openai";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
-import { GenerateSegmentedImagesRequest, AspectRatio } from "@/lib/api-types";
+import { GenerateSegmentedImagesRequest, AspectRatio, SegmentedImageResult } from "@/lib/api-types";
 import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
@@ -32,10 +32,7 @@ const providerConfig: Record<ProviderKey, ProviderConfig> = {
   },
 };
 
-const withTimeout = <T>(
-  promise: Promise<T>,
-  timeoutMillis: number
-): Promise<T> => {
+const withTimeout = <T>(promise: Promise<T>, timeoutMillis: number): Promise<T> => {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) =>
@@ -43,13 +40,6 @@ const withTimeout = <T>(
     ),
   ]);
 };
-
-interface SegmentedImageResult {
-  segmentIndex: number;
-  image?: string;
-  error?: string;
-  prompt: string;
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -136,9 +126,7 @@ async function handleImageGeneration(
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
         prompt,
-        ...(config.dimensionFormat === "size"
-          ? { size: DEFAULT_IMAGE_SIZE }
-          : { aspectRatio }),
+        ...(config.dimensionFormat === "size" ? { size: DEFAULT_IMAGE_SIZE } : { aspectRatio }),
         seed: Math.floor(Math.random() * 1000000),
         // Vertex AI only accepts a specified seed if watermark is disabled.
         providerOptions: { vertex: { addWatermark: false } },
@@ -165,6 +153,7 @@ async function handleImageGeneration(
       );
       results.push({
         segmentIndex: i,
+        image: null,
         error: "Failed to generate image for this segment",
         prompt: generatePrompt(storyConfigData, segment, segmentIndex),
       });

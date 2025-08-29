@@ -4,13 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { downloadImage } from "@/lib/utils";
-
-interface SegmentedImageResult {
-  segmentIndex: number;
-  image?: string;
-  error?: string;
-  prompt: string;
-}
+import { SegmentedImageResult } from "@/lib/api-types";
 
 interface SegmentCardProps {
   index: number;
