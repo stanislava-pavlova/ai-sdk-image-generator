@@ -2,6 +2,7 @@
   "identity_core": {
     "name": "Marie Curie",
     "base_age": 25,
+    "year_of_birth": 1867,
     "age_progression": {
       "milestones": {
         "0-2": {
@@ -39,5 +40,5 @@
     "composition": "golden ratio",
     "depth_of_field": "shallow"
   },
-  "global_constraints": "keep_name_consistent, preserve_scientific_identity"
+  "additional_context": "preserve scientific identity"
 }

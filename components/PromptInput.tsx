@@ -64,7 +64,7 @@ export function PromptInput({
   return (
     <div className="w-full mb-8">
       <div className="bg-zinc-50 rounded-xl p-4">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {/* Story Configuration Upload */}
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
@@ -140,14 +140,14 @@ export function PromptInput({
             <input
               ref={textFileRef}
               type="file"
-              accept=".txt"
+              accept=".txt,.docx"
               onChange={handleTextFileChange}
               className="hidden"
               id="text-file"
             />
 
             {textFile ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-zinc-200">
                   <div className="flex items-center gap-3">
                     <FileText className="w-4 h-4 text-zinc-500" />
@@ -167,14 +167,6 @@ export function PromptInput({
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                </div>
-
-                {/* Text Preview */}
-                <div className="bg-zinc-50 rounded-lg p-3 max-h-32 overflow-y-auto">
-                  <p className="text-sm text-zinc-600">
-                    {textContent.substring(0, 300)}
-                    {textContent.length > 300 && "..."}
-                  </p>
                 </div>
 
                 {/* Segmentation Status */}
@@ -262,21 +254,13 @@ export function PromptInput({
                 className="w-full h-12 bg-white border-zinc-200 hover:bg-zinc-50 border-dashed"
               >
                 <Upload className="w-5 h-5 mr-2" />
-                Upload Text (.txt)
+                Upload Text (.txt, .docx)
               </Button>
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <div className="text-xs text-zinc-500">
-              {textFile ? (
-                <span>Тext uploaded • Upload character/context for enhanced prompts</span>
-              ) : (
-                <span>Upload text (.txt) to generate segmented images</span>
-              )}
-            </div>
-
-            {textFile ? (
+          <div className="flex justify-center pt-1">
+            {textFile && (
               <button
                 onClick={
                   segmentData
@@ -286,16 +270,12 @@ export function PromptInput({
                 disabled={isLoading || isProcessing || !textContent.trim()}
                 className="h-8 px-4 rounded-full bg-black flex items-center justify-center disabled:opacity-50 text-white text-sm"
               >
-                {isLoading || isProcessing ? (
-                  <Spinner className="w-3 h-3 text-white" />
-                ) : segmentData ? (
+                {segmentData ? (
                   <>Generate {segmentData.totalSegments} Images</>
                 ) : (
                   "Process Text"
                 )}
               </button>
-            ) : (
-              <div className="text-xs text-zinc-400">No text uploaded</div>
             )}
           </div>
         </div>

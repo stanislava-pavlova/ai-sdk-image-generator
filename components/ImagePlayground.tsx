@@ -222,7 +222,7 @@ export function ImagePlayground() {
 
         {/* Loading state for segmented generation */}
         {isGeneratingSegments && (
-          <Card className="p-6 text-center mb-6">
+          <Card className="pb-6 text-center mb-6">
             <div className="space-y-3">
               <div className="text-lg font-medium">Generating Images...</div>
               <div className="text-sm text-zinc-600">
