@@ -85,15 +85,12 @@ The AI SDK Image Generator transforms written stories into visual narratives. He
 ### 1. Preparing Your Story
 
 #### **Text Input Methods**
-
-- **Direct Text Entry**: Type or paste your story directly into the text area
-- **File Upload**: Upload a `.txt` file containing your narrative (recommended for longer stories)
-
+- **File Upload**: Upload a `.txt` or `.docx` file
+  
 #### **Story Structure Tips**
 
 - Write in **narrative segments** that describe visual scenes
 - Each paragraph should contain **actionable visual elements**
-- Include **character descriptions** and **setting details**
 - Aim for **chronological progression** if you want age/timeline consistency
 
 **Example Story Structure:**
