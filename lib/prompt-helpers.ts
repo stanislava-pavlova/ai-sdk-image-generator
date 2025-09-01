@@ -4,7 +4,7 @@ import { StoryConfigData } from "./prompt-types";
 
 const TEXT_PROMPT_MODEL_ID = "gemini-2.0-flash-001";
 const TEXT_PROMPT_INSTRUCTION =
-  "You are an expert prompt engineer for image generation models (e.g., Imagen, Flux, Vertex). Given a scene description and optional global context, craft a single high-quality and descriptive English prompt for image generation model. Rules: Prioritize the scene content; infer visuals from it. Use rich, evocative language. Describe lighting, atmosphere, and the subject's actions in detail to create a vivid image. Use global context only when it supports the scene; omit irrelevant details. Avoid generic studio backdrops and flat portrait framing unless the scene requires it. Output only the final prompt text, no preamble, no labels, no quotes.";
+  "You are an expert prompt engineer for image generation models (e.g., Imagen, Flux, Vertex). Given a scene description and optional global context, craft a single high-quality and descriptive English prompt for image generation model. Rules: Prioritize the scene content; infer visuals from it. Always return the name of the character.When age is specified in global context, the character MUST appear exactly that age. Describe lighting, atmosphere, and the subject's actions in detail to create a vivid image. Use global context only when it supports the scene; omit irrelevant details. Avoid generic studio backdrops and flat portrait framing unless the scene requires it. Output only the final prompt text, no preamble, no labels, no quotes.";
 
 function getAgeInfoForSegment(identity_core: any, segmentIndex: number): { age: number | undefined, ageDescription: string } {
   if (!identity_core.age_progression?.milestones) {
@@ -130,8 +130,8 @@ function buildContextLines({
   if (camera?.depth_of_field) contextLines.push(`depth of field: ${camera.depth_of_field}`);
 
   // Global constraints
-  if (globalConstraints?.trim())
-    contextLines.push(`additional context: ${globalConstraints.trim()}`);
+  if (globalConstraints)
+    contextLines.push(`additional context: ${globalConstraints}`);
 
   return contextLines;
 }
@@ -169,8 +169,7 @@ export async function generatePromptWithModel(
       prompt: fullPrompt,
     });
 
-    const cleaned = (text || "").trim();
-    return cleaned || fallback;
+    return text ?? fallback;
   } catch (err) {
     console.warn("Prompt generation with model failed; falling back to formatter:", err);
     return fallback;

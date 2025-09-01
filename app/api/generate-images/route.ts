@@ -4,7 +4,7 @@ import { ImageModel, experimental_generateImage as generateImage } from "ai";
 import { vertex } from "@ai-sdk/google-vertex/edge";
 import { ProviderKey } from "@/lib/provider-config";
 import { GenerateSegmentedImagesRequest, AspectRatio, SegmentedImageResult } from "@/lib/api-types";
-import { generatePrompt, generatePromptWithModel } from "@/lib/prompt-helpers";
+import { generatePromptWithModel } from "@/lib/prompt-helpers";
 import { StoryConfigData } from "@/lib/prompt-types";
 
 /**
@@ -115,13 +115,14 @@ async function handleImageGeneration(
 
     // Use the original segment index if provided (for single image generation),
     // otherwise use the loop index (for batch generation)
-    const segmentIndex = originalSegmentIndex !== undefined ? originalSegmentIndex : i;
+    const segmentIndex = originalSegmentIndex ?? i;
+    let prompt = segment;
 
     try {
       // Use raw prompt if useRawPrompts flag is set (for manual editing), otherwise generate with AI
-      const prompt = useRawPrompts
-        ? segment
-        : await generatePromptWithModel(storyConfigData, segment, segmentIndex);
+      if (!useRawPrompts) {
+        prompt = await generatePromptWithModel(storyConfigData, segment, segmentIndex);
+      }
 
       const generatePromise = generateImage({
         model: config.createImageModel(modelId),
@@ -148,20 +149,19 @@ async function handleImageGeneration(
       // Log full error detail on the server, but return a generic error message
       // to avoid leaking any sensitive information to the client.
       console.error(
-        `Error generating image ${i} [provider=${provider}, model=${modelId}]: `,
+        `Error generating image ${originalSegmentIndex} [provider=${provider}, model=${modelId}]: `,
         error
       );
       results.push({
         segmentIndex: i,
         image: null,
         error: "Failed to generate image for this segment",
-        prompt: generatePrompt(storyConfigData, segment, segmentIndex),
+        prompt: prompt,
       });
     }
   }
 
   const successCount = results.filter((r) => r.image).length;
-  console.log(`Completed image generation [success=${successCount}/${segments.length}]`);
 
   // For single image requests, return the original format for backward compatibility
   // UNLESS forceSegmentedResponse is true (for editing functionality)
