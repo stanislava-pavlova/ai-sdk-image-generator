@@ -16,11 +16,37 @@
 
 ## Features
 
-### 🎯 **Smart Story Segmentation**
+### 🎯 **Story Segmentation**
 
 - **Intelligent Text Processing**: Automatically breaks down narratives into meaningful segments for image generation
 - **Configurable Segment Length**: Adjust words per segment (10-50 words) to control granularity
 - **Context-Aware Splitting**: Preserves sentence structure and narrative flow while creating logical image prompts
+
+#### **Segmentation Algorithm**
+
+The text segmentation uses a flexible threshold approach to balance target word count with sentence boundary preservation:
+
+- **Target**: Aim for your specified words per segment (e.g., 25 words)
+- **Flexibility Threshold**: 1.4x multiplier (40% tolerance) allows natural sentence completion
+- **Sentence Preservation**: Never breaks sentences mid-way to maintain narrative coherence
+
+**Example with 25-word target:**
+```
+Current segment: 20 words
+Next sentence: 10 words
+Potential total: 30 words
+
+Since 30 < 35 (25 × 1.4), the algorithm includes the sentence.
+
+But if:
+Current segment: 25 words  
+Next sentence: 15 words
+Potential total: 40 words
+
+Since 40 > 35, it finalizes at 25 words and starts a new segment.
+```
+
+This ensures segments stay reasonably close to your target while respecting natural story flow.
 
 ### 🎨 **Advanced Image Generation**
 
@@ -192,6 +218,7 @@ The application is configured for Google Vertex AI by default. Other providers (
 - Be aware of Google Vertex AI usage quotas
 - Space out large generation requests
 - Monitor your API usage in the Google Cloud Console
+- **Request Timeout**: Automatic 55-second timeout prevents hanging requests if the API is slow
 
 ### **Environment Variables for Production**
 
