@@ -140,13 +140,6 @@ For **character consistency** and **visual coherence**, upload a story configura
 }
 ```
 
-#### **Key Configuration Benefits**
-
-- **Character Consistency**: Same character appearance across all images
-- **Age Progression**: Automatic aging based on story timeline
-- **Visual Cohesion**: Consistent art style, lighting, and composition
-- **Quality Enhancement**: Professional photography and cinematography settings
-
 ### 3. Segmentation Settings
 
 #### **Words Per Segment**
@@ -167,7 +160,7 @@ Choose based on your intended use:
 
 #### **Starting Generation**
 
-1. Upload or enter your story text
+1. Upload your story text (.txt or .docx)
 2. Upload story configuration JSON
 3. Adjust segmentation settings
 4. Select aspect ratio
@@ -186,8 +179,6 @@ Choose based on your intended use:
 - ✅ Include **specific visual details** in your story
 - ✅ Mention **lighting, setting, and mood** when relevant
 - ✅ Use **consistent character names** throughout
-- ✅ Structure stories with **clear scene transitions**
-- ✅ Upload **story configuration** for character consistency
 
 #### **Common Pitfalls to Avoid**
 
@@ -218,8 +209,6 @@ The application is configured for Google Vertex AI by default. Other providers (
 - **Request Timeout**: Automatic 55-second timeout prevents hanging requests if the API is slow
 
 ### **Environment Variables for Production**
-
-After clicking deploy, configure these environment variables in Vercel:
 
 ```env
 GOOGLE_CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
@@ -307,7 +296,6 @@ GOOGLE_VERTEX_LOCATION=us-central1
 
 - ✅ Never commit `.env.local` to version control
 - ✅ Store service account JSON files securely
-- ✅ Use different service accounts for development and production
 - ✅ Regularly rotate service account keys
 
 ### Step 4: Start Development Server
