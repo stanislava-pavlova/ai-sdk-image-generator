@@ -52,7 +52,7 @@ This ensures segments stay reasonably close to your target while respecting natu
 
 - **Multi-Model Support**: Choose between performance and quality modes using Google Vertex AI's Imagen models
 - **Character Consistency**: Maintains character identity, age progression, and visual continuity across story segments
-- **Flexible Aspect Ratios**: Support for various formats (16:9, 9:16, 1:1, 4:3, 3:4)
+- **Flexible Aspect Ratios**: Support for various formats (16:9, 9:16, 1:1)
 - **Individual Image Editing**: Edit and regenerate specific images with custom prompts
 
 ### 📖 **Story Configuration System**
@@ -60,7 +60,6 @@ This ensures segments stay reasonably close to your target while respecting natu
 - **Character Profiles**: Define character identity, age progression, appearance, and personality traits
 - **Visual Style Control**: Set artistic style, mood, color palette, and camera settings
 - **Age Progression Mapping**: Automatically adjust character appearance based on story timeline
-- **Consistent Theming**: Maintain visual coherence throughout the entire narrative
 
 ### 🖼️ **Image Management**
 
